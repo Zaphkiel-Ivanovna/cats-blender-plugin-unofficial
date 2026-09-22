@@ -28,6 +28,7 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
 
         info_col = col.column(align=True)
         info_col.scale_y = 0.85
+        info_col.label(text=t('CreditsPanel.fork1'))
         info_col.label(text=t('CreditsPanel.maintainers1'))
         info_col.label(text=t('CreditsPanel.maintainers2'))
 
