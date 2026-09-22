@@ -4,11 +4,8 @@ import os
 import bpy
 import json
 import copy
-import time
 import pathlib
 import collections
-import threading
-from threading import Thread, Event
 from datetime import datetime, timezone
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -25,8 +22,6 @@ settings_file = os.path.join(resources_dir, "settings.json")
 
 settings_data = None
 settings_data_unchanged = None
-settings_stop_event = Event()
-settings_threads = []
 
 # Settings name = [Default Value, Require Blender Restart]
 settings_default = OrderedDict()
@@ -79,14 +74,17 @@ class DebugTranslations(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        bpy.context.scene.debug_translations = True
+        context.scene.debug_translations = True
         translator = google_translator()
         try:
             translator.translate('猫')
-        except:
-            self.report({'INFO'}, t('DebugTranslations.error'))
+        except Exception as e:
+            print('Translation debug failed:', e)
+            self.report({'ERROR'}, t('DebugTranslations.error'))
+            return {'CANCELLED'}
+        finally:
+            context.scene.debug_translations = False
 
-        bpy.context.scene.debug_translations = False
         self.report({'INFO'}, t('DebugTranslations.success'))
         return {'FINISHED'}
 
@@ -173,57 +171,36 @@ def reset_settings(full_reset=False, to_reset_settings=None):
     print('SETTINGS RESET')
 
 def start_apply_settings_timer():
-    global settings_threads
-    thread = Thread(target=apply_settings_with_timeout, args=[])
-    settings_threads.append(thread)
-    thread.start()
-
-def apply_settings_with_timeout():
-    timeout = 5  # 5 seconds timeout
-    timer = threading.Timer(timeout, release_lock)
-    timer.start()
-    try:
-        with settings_lock_context():
-            apply_settings()
-    finally:
-        timer.cancel()
-
-def release_lock():
-    global lock_settings
-    print("Settings lock timed out, releasing lock")
-    lock_settings = False
+    # Settings can't be written during register(), so apply them shortly after.
+    # bpy.app.timers runs the callback on the main thread, which is the only place
+    # bpy.context.scene may be touched.
+    if not bpy.app.timers.is_registered(apply_settings):
+        bpy.app.timers.register(apply_settings, first_interval=0.1)
 
 def apply_settings():
-    applied = False
-    while not applied and not settings_stop_event.is_set():
-        if hasattr(bpy.context, 'scene'):
+    """Timer callback. Returns a delay in seconds to run again, or None to stop."""
+    scene = getattr(bpy.context, 'scene', None)
+    if scene is None:
+        return 0.3
+
+    with settings_lock_context():
+        settings_to_reset = []
+        for setting in settings_default.keys():
             try:
-                settings_to_reset = []
-                for setting in settings_default.keys():
-                    try:
-                        setattr(bpy.context.scene, setting, settings_data.get(setting))
-                    except TypeError:
-                        settings_to_reset.append(setting)
-                if settings_to_reset:
-                    reset_settings(to_reset_settings=settings_to_reset)
-                    print("RESET SETTING ON TIMER:", setting)
-            except AttributeError:
-                time.sleep(0.3)
-                continue
+                setattr(scene, setting, settings_data.get(setting))
+            except (TypeError, AttributeError):
+                settings_to_reset.append(setting)
 
-            applied = True
-            print('Settings applied successfully')
-        else:
-            time.sleep(0.3)
+        if settings_to_reset:
+            reset_settings(to_reset_settings=settings_to_reset)
+            print('RESET SETTINGS ON TIMER:', ', '.join(settings_to_reset))
 
-def stop_apply_settings_threads():
-    global settings_threads, settings_stop_event
+    print('Settings applied successfully')
+    return None
 
-    print("Stopping settings threads...")
-    settings_stop_event.set()
-    for t in settings_threads:
-        t.join()
-    print("Settings threads stopped.")
+def stop_apply_settings_timer():
+    if bpy.app.timers.is_registered(apply_settings):
+        bpy.app.timers.unregister(apply_settings)
 
 def settings_changed():
     for setting, value in settings_default.items():
