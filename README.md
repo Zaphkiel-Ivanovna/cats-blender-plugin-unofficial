@@ -38,6 +38,17 @@ same bounds, so Blender will not offer it to an unsupported version either.
   <img src="docs/sections/panels.svg" alt="Panels" width="580">
 </h2>
 
+<p align="center">
+  <img src="docs/screenshots/ui-overview.webp" alt="The CATS sidebar in Blender 5.1 with a VRChat avatar loaded" width="100%">
+</p>
+
+Fourteen meshes and a 323-bone rig, straight out of an FBX import. Fix Model takes it to
+one mesh and 304 bones in 2.1 seconds, without losing a vertex.
+
+<p align="center">
+  <img src="docs/screenshots/ui-after-fix.webp" alt="The same avatar after Fix Model, joined into a single mesh" width="100%">
+</p>
+
 | Panel | What it covers |
 | --- | --- |
 | Fix Model | The main pass: bone renaming, weight merging, mesh join, shape key cleanup |
