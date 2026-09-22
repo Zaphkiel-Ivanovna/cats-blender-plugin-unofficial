@@ -1622,9 +1622,10 @@ def has_shapekeys(mesh_obj: Object) -> bool:
     return mesh_obj.data.shape_keys is not None
 
 
-@lru_cache(maxsize=None)
 def _get_shape_key_co(shape_key: ShapeKey) -> np.ndarray:
-    return np.array([v.co for v in shape_key.data])
+    co = np.empty(len(shape_key.data) * 3, dtype=np.float32)
+    shape_key.data.foreach_get('co', co)
+    return co
 
 
 def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True) -> int:
@@ -1637,14 +1638,21 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
         return 0
 
     pre_polygons = len(mesh.polygons)
+    vertex_selection = None
 
     if save_shapes:
         vertex_selection = np.full(len(mesh.vertices), True, dtype=bool)
+        # Cached for this call only. The keys are live bpy structs, so a cache that
+        # outlives the call hands back coordinates from before the mesh was edited,
+        # and this function deletes vertices.
         cached_co_getter = lru_cache(maxsize=None)(_get_shape_key_co)
         for kb in mesh.shape_keys.key_blocks[1:]:
             relative_key = kb.relative_key
-            if kb == relative_key:
+            if relative_key is None or kb == relative_key:
                 continue
+            # Exact comparison on purpose: both sides are stored float32 read back
+            # unchanged, so a shape key that does not move a vertex compares equal.
+            # A tolerance here would merge vertices that a shape key does move.
             same = cached_co_getter(kb) == cached_co_getter(relative_key)
             vertex_not_moved_by_shape_key = np.all(same.reshape(-1, 3), axis=1)
             vertex_selection &= vertex_not_moved_by_shape_key
@@ -1655,38 +1663,19 @@ def remove_doubles(mesh_obj: Object, threshold: float, save_shapes: bool = True)
 
         if vertex_selection.all():
             save_shapes = False
-        else:
-            bpy.context.view_layer.objects.active = mesh_obj
-            bpy.ops.object.mode_set(mode='EDIT')
-            verts = list(bmesh.from_edit_mesh(mesh).verts)
-            for v in verts:
-                v.select = vertex_selection[v.index]
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.context.view_layer.update()
-    else:
-        bmesh.ops.select_all(bm, action='DESELECT')
 
     bm = bmesh.new()
-    bm.from_mesh(mesh)
-    if save_shapes:
-        verts = [v for v in bm.verts if v.select]
-    else:
-        verts = bm.verts
+    try:
+        bm.from_mesh(mesh)
+        # from_mesh keeps mesh.vertices' order, so the mask indexes bm.verts directly
+        verts = [v for i, v in enumerate(bm.verts) if vertex_selection[i]] if save_shapes else bm.verts
 
-    total_verts = len(verts)
-    progress_steps = 100
-    progress_step_size = total_verts // progress_steps
-    progress = 0
+        bmesh.ops.remove_doubles(bm, verts=verts, dist=threshold)
+        bm.to_mesh(mesh)
+    finally:
+        bm.free()
 
-    bmesh.ops.remove_doubles(bm, verts=verts, dist=threshold)
-
-    while progress < total_verts:
-        bm.select_flush(True)
-        bpy.context.view_layer.update()
-        bpy.context.window_manager.progress_update(progress / total_verts)
-        progress += progress_step_size
-
-    bm.to_mesh(mesh)
+    mesh.update()
 
     return pre_polygons - len(mesh.polygons)
 
