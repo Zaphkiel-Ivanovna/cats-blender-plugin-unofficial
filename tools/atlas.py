@@ -8,6 +8,7 @@ from . import common as Common
 from .register import register_wrap
 from .. import globs
 from .translations import t
+import contextlib
 
 
 @register_wrap
@@ -21,17 +22,13 @@ class EnableSMC(bpy.types.Operator):
         for mod in addon_utils.modules():
             if mod.bl_info['name'] == "Shotariya-don":
                 if addon_utils.check(mod.__name__)[0]:
-                    try:
+                    with contextlib.suppress(Exception):
                         bpy.ops.preferences.addon_disable(module=mod.__name__)
-                    except Exception:
-                        pass
                     continue
             if mod.bl_info['name'] == "Shotariya's Material Combiner":
                 if mod.bl_info['version'] < (2, 1, 2, 9) and addon_utils.check(mod.__name__)[0]:
-                    try:
+                    with contextlib.suppress(Exception):
                         bpy.ops.preferences.addon_disable(module=mod.__name__)
-                    except Exception:
-                        pass
                     continue
 
         for mod in addon_utils.modules():
@@ -141,7 +138,7 @@ class ShotariyaButton(bpy.types.Operator):
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self, width=500)
-    
+
     def draw(self, context):
         layout = self.layout
         col = layout.column()
@@ -149,5 +146,5 @@ class ShotariyaButton(bpy.types.Operator):
         col.separator()
         col.label(text="https://github.com/teamneoneko/material-combiner-addon/")
         col.label(text="releases/latest")
-        col.separator() 
+        col.separator()
         col.label(text="Click OK to open, or Cancel to visit manually.")

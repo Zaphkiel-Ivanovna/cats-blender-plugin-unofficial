@@ -21,16 +21,16 @@ class LoadBonesButton(bpy.types.Operator):
         return Common.get_armature() is not None
 
     def execute(self, context):
-        armature = Common.get_armature()
-        
+        Common.get_armature()
+
         globs.root_bones_choices = {}
         choices = get_parent_root_bones(self, context)
-        
+
         wrapped_items = Common.wrap_dynamic_enum_items(
             lambda s, c: choices,
             'merge_bone'
         )
-        
+
         bpy.types.Scene.merge_bone = bpy.props.EnumProperty(
             name=t('Scene.merge_bone.label'),
             description=t('Scene.merge_bone.desc'),
@@ -49,7 +49,7 @@ class BoneMergeButton(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.scene.merge_bone in globs.root_bones and 
+        return (context.scene.merge_bone in globs.root_bones and
                 Common.is_enum_non_empty(context.scene.merge_mesh))
 
     def execute(self, context):
@@ -68,8 +68,7 @@ class BoneMergeButton(bpy.types.Operator):
             if not bone:
                 continue
 
-            for child in bone.children:
-                todo += 1
+            todo += len(bone.children)
 
         wm = bpy.context.window_manager
         wm.progress_begin(did, todo)

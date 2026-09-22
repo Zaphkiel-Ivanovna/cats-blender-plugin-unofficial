@@ -116,10 +116,10 @@ def get_parent_root_bones(self, context):
                         bone_groups[rootbone.name].append(bone.name)
 
     bone_groups_tmp = {}
-    for rootbone in bone_groups:
-        if len(bone_groups[rootbone]) >= 2:
-            choices.append((rootbone, rootbone.replace('_R', '').replace('_L', '') + ' (' + str(len(bone_groups[rootbone])) + ' bones)', rootbone))
-            bone_groups_tmp[rootbone] = bone_groups[rootbone]
+    for rootbone, bones in bone_groups.items():
+        if len(bones) >= 2:
+            choices.append((rootbone, rootbone.replace('_R', '').replace('_L', '') + ' (' + str(len(bones)) + ' bones)', rootbone))
+            bone_groups_tmp[rootbone] = bones
 
     globs.root_bones = bone_groups_tmp
     globs.root_bones_choices = choices
@@ -136,7 +136,7 @@ class RefreshRootButton(bpy.types.Operator):
 
     def execute(self, context):
         print(globs.root_bones_choices)
-        print('')
+        print()
         print(globs.root_bones)
         globs.root_bones_choices = {}
 

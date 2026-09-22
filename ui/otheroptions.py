@@ -65,7 +65,7 @@ class OtherOptionsPanel(ToolPanel, bpy.types.Panel):
             row.prop(context.scene, 'show_more_options', icon=globs.ICON_ADD, emboss=True, expand=False, toggle=False, event=False)
         else:
             row.prop(context.scene, 'show_more_options', icon=globs.ICON_REMOVE, emboss=True, expand=False, toggle=False, event=False)
-            
+
             col.separator()
             row = layout_split(col, factor=0.27, align=True)
             row.scale_y = button_height

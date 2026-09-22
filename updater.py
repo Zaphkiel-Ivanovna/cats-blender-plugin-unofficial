@@ -11,6 +11,7 @@ from .tools.translations import t
 from .tools.common import wrap_dynamic_enum_items
 from . import globs
 from . import CATS_VERSION
+import contextlib
 
 no_ver_check = False
 fake_update = False
@@ -103,9 +104,7 @@ class UpdateToSelectedButton(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if is_checking_for_update or not version_list:
-            return False
-        return True
+        return not (is_checking_for_update or not version_list)
 
     def execute(self, context):
         global confirm_update_to, used_updater_panel
@@ -164,9 +163,7 @@ class ShowPatchnotesPanel(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if is_checking_for_update or not version_list:
-            return False
-        return True
+        return not (is_checking_for_update or not version_list)
 
     def execute(self, context):
         return {'FINISHED'}
@@ -420,10 +417,8 @@ def get_github_releases():
 
         version = 'v-99-99-99'
         version_tag = version.replace('-', '.')
-        if version_tag.startswith('v.'):
-            version_tag = version_tag[2:]
-        if version_tag.startswith('v'):
-            version_tag = version_tag[1:]
+        version_tag = version_tag.removeprefix('v.')
+        version_tag = version_tag.removeprefix('v')
 
         version_list[version_tag] = ['', 'Put exiting new stuff here', 'Today']
         version_list['12.34.56.78'] = ['', 'Nothing new to see', 'A week ago probably']
@@ -438,7 +433,7 @@ def get_github_releases():
         return False
     if not isinstance(data, list):
         return False
-    
+
     for version in data:
         full_tag = version.get('tag_name')
         if not full_tag:
@@ -544,8 +539,7 @@ def download_file(update_url):
         with requests.get(update_url, timeout=REQUEST_TIMEOUT, stream=True) as response:
             response.raise_for_status()
             with open(update_zip_file, 'wb') as zip_out:
-                for chunk in response.iter_content(chunk_size=65536):
-                    zip_out.write(chunk)
+                zip_out.writelines(response.iter_content(chunk_size=65536))
     except requests.RequestException as e:
         print("FILE COULD NOT BE DOWNLOADED:", e)
         shutil.rmtree(downloads_dir)
@@ -642,7 +636,7 @@ def check_ignored_version():
     if not os.path.isfile(ignore_ver_file):
         return False
 
-    with open(ignore_ver_file, 'r', encoding="utf8") as outfile:
+    with open(ignore_ver_file, encoding="utf8") as outfile:
         version = outfile.read()
 
     if latest_version_str == version:
@@ -853,10 +847,8 @@ def register(dev_branch, version_str):
 
 def unregister():
     for cls in reversed(to_register):
-        try:
+        with contextlib.suppress(RuntimeError):
             bpy.utils.unregister_class(cls)
-        except RuntimeError:
-            pass
 
     if hasattr(bpy.types.Scene, 'cats_updater_version_list'):
         del bpy.types.Scene.cats_updater_version_list

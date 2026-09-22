@@ -31,7 +31,7 @@ def custom_draw_smc_ui(context, m_col):
         smc_module = None
         globs_module = None
         main_panel_module = None
-        
+
         for mod in addon_utils.modules():
             if mod.bl_info['name'] == "Shotariya's Material Combiner" and addon_utils.check(mod.__name__)[0]:
                 try:
@@ -41,7 +41,7 @@ def custom_draw_smc_ui(context, m_col):
                     break
                 except ImportError:
                     continue
-        
+
         if not smc_module or not globs_module or not main_panel_module:
             draw_error_box(m_col, [
                 t('OptimizePanel.matCombOutOfDate'),
@@ -52,7 +52,7 @@ def custom_draw_smc_ui(context, m_col):
             row.scale_y = 1.3
             row.operator(Atlas.ShotariyaButton.bl_idname, icon=globs.ICON_URL)
             return
-        
+
         if not hasattr(main_panel_module.MaterialCombinerPanel, 'draw_pillow_installer'):
             draw_error_box(m_col, [
                 t('OptimizePanel.matCombOutOfDate'),
@@ -63,12 +63,12 @@ def custom_draw_smc_ui(context, m_col):
             row.scale_y = 1.3
             row.operator(Atlas.ShotariyaButton.bl_idname, icon=globs.ICON_URL)
             return
-            
+
         if globs_module.pil_available:
             if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data:
                 m_col.template_list(
                     "SMC_UL_Combine_List",
-                    "combine_list", 
+                    "combine_list",
                     context.scene,
                     "smc_ob_data",
                     context.scene,
@@ -86,12 +86,12 @@ def custom_draw_smc_ui(context, m_col):
             col = m_col.column()
             col.scale_y = 1.3
             col.operator("smc.combiner", text="Save Atlas to..", icon='TEXTURE').cats = True
-            
+
         elif globs_module.pil_install_attempted:
             col = m_col.box().column()
             col.label(text="Installation complete", icon='CHECKMARK')
             col.label(text="Please restart Blender")
-            
+
         else:
             if hasattr(main_panel_module.MaterialCombinerPanel, 'draw_pillow_installer'):
                 main_panel_module.MaterialCombinerPanel.draw_pillow_installer(context, m_col)
@@ -101,8 +101,8 @@ def custom_draw_smc_ui(context, m_col):
                 row = m_col.row()
                 row.scale_y = 1.3
                 row.operator('smc.get_pillow', text='Install Pillow', icon='IMPORT')
-            
-    except Exception as e:
+
+    except Exception:
         draw_error_box(m_col, [
             t('OptimizePanel.matCombInterfaceError'),
             t('OptimizePanel.matCombUseMainPanel')
@@ -112,13 +112,13 @@ def custom_draw_smc_ui(context, m_col):
 def check_for_smc(force_refresh=False):
     global draw_smc_ui, old_smc_version, smc_is_disabled, found_very_old_smc
     global _smc_check_cache, _smc_cache_timestamp
-    
+
     import time
     current_time = time.time()
-    
+
     if not force_refresh and _smc_check_cache is not None and (current_time - _smc_cache_timestamp) < 300:
         return
-    
+
     try:
         draw_smc_ui = None
         found_very_old_smc = False
@@ -141,10 +141,10 @@ def check_for_smc(force_refresh=False):
                 found_very_old_smc = False
                 draw_smc_ui = import_module(mod.__name__ + '.operators.ui.include').draw_ui
                 break
-        
+
         _smc_check_cache = True
         _smc_cache_timestamp = current_time
-        
+
     except Exception as e:
         print(f"Error checking for Material Combiner: {e}")
         draw_smc_ui = None
@@ -187,7 +187,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
             row = box.row(align=True)
             row.scale_y = 0.75
             split = row.split(factor=0.7)
-            split.label(text=t('OptimizePanel.atlasAuthor'), 
+            split.label(text=t('OptimizePanel.atlasAuthor'),
                        icon_value=Iconloader.preview_collections["custom_icons"]["heart1"].icon_id)
             split.operator(Atlas.AtlasHelpButton.bl_idname, text="", icon='QUESTION')
 
@@ -205,8 +205,8 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
                 custom_draw_smc_ui(context, col)
 
             check_for_smc()
-            
-        except Exception as e:
+
+        except Exception:
             draw_error_box(col, [
                 t('OptimizePanel.matCombInterfaceError'),
                 t('OptimizePanel.matCombUseMainPanel')
@@ -216,7 +216,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
         messages = []
         button_operator = None
         button_icon = None
-        
+
         if message_type == 'disabled':
             messages = [
                 t('OptimizePanel.matCombDisabled1'),
@@ -225,7 +225,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
             button_operator = Atlas.EnableSMC.bl_idname
             button_icon = 'CHECKBOX_HLT'
             draw_error_box(col, messages)
-            
+
         elif message_type == 'outdated':
             messages = [
                 t('OptimizePanel.matCombOutdated1'),
@@ -237,7 +237,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
             button_operator = Atlas.ShotariyaButton.bl_idname
             button_icon = globs.ICON_URL
             draw_error_box(col, messages)
-            
+
         elif message_type == 'very_old':
             messages = [
                 t('OptimizePanel.matCombOutdated1'),
@@ -247,7 +247,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
             button_operator = Atlas.ShotariyaButton.bl_idname
             button_icon = globs.ICON_URL
             draw_error_box(col, messages)
-            
+
         elif message_type == 'not_installed':
             messages = [
                 t('OptimizePanel.matCombNotInstalled'),
@@ -256,7 +256,7 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
             button_operator = Atlas.ShotariyaButton.bl_idname
             button_icon = globs.ICON_URL
             draw_error_box(col, messages)
-        
+
         if button_operator:
             col.separator()
             row = col.row(align=True)
@@ -283,23 +283,23 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
             box_col.scale_y = 1.3
             box_col.operator(Material.CombineMaterialsButton.bl_idname, icon='MATERIAL')
             box_col.operator(Material.ConvertAllToPngButton.bl_idname, icon='IMAGE_RGB_ALPHA')
-            
+
             col.separator()
-            
+
             box = col.box()
             box_col = box.column(align=True)
-            
+
             header_row = box_col.row(align=True)
             header_row.scale_y = 0.75
             header_row.label(text=t('OtherOptionsPanel.joinMeshes'), icon='AUTOMERGE_ON')
-            
+
             ops_row = box_col.row(align=True)
             ops_row.scale_y = 1.3
             ops_row.operator(Armature_manual.JoinMeshes.bl_idname, text=t('OtherOptionsPanel.JoinMeshes.label'))
             ops_row.operator(Armature_manual.JoinMeshesSelected.bl_idname, text=t('OtherOptionsPanel.JoinMeshesSelected.label'))
-            
+
             col.separator()
-            
+
             box = col.box()
             box_col = box.column(align=True)
 
@@ -311,7 +311,7 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
             row = box_col.row(align=True)
             row.scale_y = 1.3
             row.operator(Armature_manual.RemoveDoubles.bl_idname, icon='X')
-            
+
         except Exception as e:
             draw_error_box(col, ["Error loading material operations", str(e)])
 
@@ -332,56 +332,56 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
         try:
             box = col.box()
             box_col = box.column(align=True)
-            
+
             if len(Common.get_meshes_objects(check=False)) > 1:
                 row = box_col.row(align=True)
                 row.scale_y = 1.0
                 row.prop(context.scene, 'merge_mesh')
-            
+
             box_col.prop(context.scene, 'merge_bone')
             box_col.prop(context.scene, 'merge_ratio')
-            
+
             actions_row = box_col.row(align=True)
             actions_row.scale_y = 1.3
             actions_row.operator(Rootbone.RefreshRootButton.bl_idname, icon='FILE_REFRESH')
             actions_row.operator(Bonemerge.BoneMergeButton.bl_idname, icon='AUTOMERGE_ON')
-            
+
             col.separator()
-            
+
             box = col.box()
             box_col = box.column(align=True)
-            
+
             header_row = box_col.row(align=True)
             header_row.scale_y = 0.75
             header_row.label(text=t('OtherOptionsPanel.mergeWeights'), icon='BONE_DATA')
-            
+
             ops_row = box_col.row(align=True)
             ops_row.scale_y = 1.3
             ops_row.operator(Armature_manual.MergeWeights.bl_idname, text=t('OtherOptionsPanel.MergeWeights.label'))
             ops_row.operator(Armature_manual.MergeWeightsToActive.bl_idname, text=t('OtherOptionsPanel.MergeWeightsToActive.label'))
-            
+
             options_col = box_col.column(align=True)
             options_col.scale_y = 0.85
             options_col.separator()
             options_col.prop(context.scene, 'keep_merged_bones')
             options_col.prop(context.scene, 'merge_visible_meshes_only')
-            
+
             col.separator()
-            
+
             box = col.box()
             box_col = box.column(align=True)
-            
+
             header_row = box_col.row(align=True)
             header_row.scale_y = 0.75
             header_row.label(text=t('OtherOptionsPanel.delete'), icon='X')
-            
+
             ops_col = box_col.column(align=True)
             ops_col.scale_y = 1.3
             row = ops_col.row(align=True)
             row.operator(Armature_manual.RemoveZeroWeightBones.bl_idname, text=t('OtherOptionsPanel.RemoveZeroWeightBones.label'))
             row.operator(Armature_manual.RemoveConstraints.bl_idname, text=t('OtherOptionsPanel.RemoveConstraints'))
             row.operator(Armature_manual.RemoveZeroWeightGroups.bl_idname, text=t('OtherOptionsPanel.RemoveZeroWeightGroups'))
-            
+
             options_col = box_col.column(align=True)
             options_col.scale_y = 0.85
             options_col.separator()
@@ -396,7 +396,7 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
             box_col.scale_y = 1.3
             box_col.operator(Armature_manual.DuplicateBonesButton.bl_idname, icon='GROUP_BONE')
             box_col.operator(Armature_manual.ConnectBonesButton.bl_idname, icon='CONSTRAINT_BONE')
-            
+
         except Exception as e:
             draw_error_box(col, ["Error loading bone merging operations", str(e)])
 

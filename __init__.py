@@ -41,6 +41,7 @@ else:
     importlib.reload(extentions)
 
 from .tools.translations import t
+import contextlib
 
 
 def check_unsupported_blender_versions():
@@ -97,10 +98,8 @@ def register():
 
     if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
         import imscale.immersive_scaler as imscale
-        try:
+        with contextlib.suppress(ModuleNotFoundError):
             imscale.register()
-        except ModuleNotFoundError:
-            pass
 
     count = 0
     tools.register.order_classes()
@@ -115,7 +114,7 @@ def register():
         print('Skipped', len(ordered_classes) - count, 'CATS classes.')
 
     extentions.register()
-    
+
     tools.iconloader.load_other_icons()
 
     globs.dict_found = tools.translate.load_translations()
@@ -148,10 +147,8 @@ def unregister():
 
     if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
         import imscale.immersive_scaler as imscale
-        try:
+        with contextlib.suppress(ModuleNotFoundError):
             imscale.unregister()
-        except ModuleNotFoundError:
-            pass 
 
     count = 0
     for cls in reversed(tools.register.get_ordered_classes()):

@@ -36,16 +36,16 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
 
         import_box = col.box()
         import_col = import_box.column(align=True)
-        
+
         row = import_col.row(align=True)
         row.scale_y = 1.3
         split = row.split(factor=0.85, align=True)
         sub_row = split.row(align=True)
-        sub_row.operator(Importer.ImportAnyModel.bl_idname, 
-                        text=t('QuickAccess.ImportAnyModel.label'), 
+        sub_row.operator(Importer.ImportAnyModel.bl_idname,
+                        text=t('QuickAccess.ImportAnyModel.label'),
                         icon='ARMATURE_DATA')
         if len(Common.get_armature_objects()) > 0:
-            sub_row.operator(Importer.ExporterModelsPopup.bl_idname, 
+            sub_row.operator(Importer.ExporterModelsPopup.bl_idname,
                            icon='ARMATURE_DATA')
         split.operator(Importer.ModelsPopup.bl_idname, text="", icon='COLLAPSEMENU')
 
@@ -58,13 +58,13 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         col.separator()
         box = col.box()
         quick_col = box.column(align=True)
-        
+
         header_row = quick_col.row(align=True)
         header_row.scale_y = 0.75
         header_row.label(text="Quick Actions", icon='SHADERFX')
-        
+
         quick_col.separator()
-        
+
         draw_info_box(quick_col, [
             t("FixLegacy.info1"),
             t("FixLegacy.info2")
@@ -74,8 +74,8 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
 
         row = quick_col.row(align=True)
         row.scale_y = 1.3
-        row.operator(Material.CombineMaterialsButton.bl_idname, 
-                    text=t('QuickAccess.CombineMats.label'), 
+        row.operator(Material.CombineMaterialsButton.bl_idname,
+                    text=t('QuickAccess.CombineMats.label'),
                     icon='MATERIAL')
         row.operator(Armature_manual.JoinMeshes.bl_idname,
                     text=t('QuickAccess.JoinMeshes.label'),
@@ -84,13 +84,13 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
         col.separator()
         pose_box = col.box()
         pose_col = pose_box.column(align=True)
-        
+
         header_row = pose_col.row(align=True)
         header_row.scale_y = 0.75
         header_row.label(text="Pose Mode", icon='POSE_HLT')
-        
+
         pose_col.separator()
-        
+
         self.draw_pose_section(pose_col, context)
 
     def draw_version_warnings(self, col, context):
@@ -103,7 +103,7 @@ class QuickAccessPanel(ToolPanel, bpy.types.Panel):
 
     def draw_pose_section(self, col, context):
         armature_obj = Common.get_armature()
-        
+
         if not armature_obj or armature_obj.mode != 'POSE':
             row = col.row(align=True)
             row.scale_y = 1.3

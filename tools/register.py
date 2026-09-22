@@ -10,8 +10,7 @@ __bl_ordered_classes = []
 def register_wrap(cls):
     if hasattr(cls, 'bl_rna'):
         __bl_classes.append(cls)
-    cls = make_annotations(cls)
-    return cls
+    return make_annotations(cls)
 
 
 def make_annotations(cls):

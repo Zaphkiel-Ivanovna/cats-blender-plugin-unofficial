@@ -17,8 +17,7 @@ class SearchMenuOperatorBoneHead(bpy.types.Operator):
     bl_property = "my_enum"
 
     def items_callback(self, context):
-        items = Common.get_bones_head(self, context)
-        return items
+        return Common.get_bones_head(self, context)
 
     my_enum: bpy.props.EnumProperty(name="shapekeys", items=items_callback)
 
@@ -173,7 +172,7 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         box = col.box()
         box_col = box.column(align=True)
-        
+
         armature = Common.get_armature()
         if not armature:
             draw_error_box(col, t('EyeTrackingPanel.error.noArm'))
@@ -258,7 +257,7 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
     def draw_testing_mode(self, context, box):
         col = box.column(align=True)
         armature = Common.get_armature()
-        
+
         if not armature:
             box.label(text=t('EyeTrackingPanel.error.noArm'), icon='ERROR')
             return
@@ -270,7 +269,7 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_no_meshes_warning(self, col):
         col.separator()
-        sub = col.column(align=True)
+        col.column(align=True)
         row = col.row(align=True)
         row.scale_y = 1.1
         row.label(text=t('EyeTrackingPanel.error.noMesh'), icon='ERROR')
@@ -283,12 +282,12 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_bone_selection(self, context, col):
         armature = Common.get_armature()
-        
+
         if not armature:
             col.separator()
             col.label(text=t('EyeTrackingPanel.error.noArm'), icon='ERROR')
             return
-        
+
         col.separator()
         row = col.row(align=True)
         row.scale_y = 1.1
@@ -310,18 +309,18 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
     def draw_shapekey_selection(self, context, col):
         col.separator()
         active = not context.scene.disable_eye_blinking
-        
+
         mesh_name = context.scene.mesh_name_eye
         if not mesh_name or mesh_name == 'Cats_empty_enum_identifier':
             col.label(text=t('EyeTrackingPanel.error.noMesh'), icon='ERROR')
             return
-        
+
         try:
             mesh = Common.get_objects()[mesh_name]
         except KeyError:
             col.label(text=t('EyeTrackingPanel.error.noMesh'), icon='ERROR')
             return
-        
+
         if not mesh or not mesh.data.shape_keys:
             col.label(text=t('EyeTrackingPanel.error.noShapekeys'), icon='ERROR')
             return
@@ -381,7 +380,7 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_testing_controls(self, context, col, armature):
         col.separator()
-        
+
         row = col.row(align=True)
         row.prop(context.scene, 'eye_rotation_x', icon='FILE_PARENT')
         row = col.row(align=True)
@@ -408,38 +407,38 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         self.draw_testing_warnings(context, col, armature)
 
         col.separator()
-        
+
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Eyetracking.StopTestingButton.bl_idname, icon='PAUSE')
-        
+
         row = col.row(align=True)
         row.scale_y = 1.0
         row.operator(Eyetracking.ResetEyeTrackingButton.bl_idname, icon='FILE_REFRESH')
 
         preview_box = col.box()
         preview_box.label(text="Eye Movement Preview:", icon='PREVIEW_RANGE')
-        
+
         row = preview_box.row(align=True)
         row.prop(context.scene, "eye_rotation_x", text="Vertical Range")
         row.prop(context.scene, "eye_rotation_y", text="Horizontal Range")
-        
+
         indicator_row = preview_box.row()
         indicator_row.scale_y = 2.0
         indicator_row.alignment = 'CENTER'
-        
+
         current_x = context.scene.eye_rotation_x
         current_y = context.scene.eye_rotation_y
         direction = "●"
-        
+
         if abs(current_x) > 15 or abs(current_y) > 15:
             direction = "◎"
-        
+
         indicator_row.label(text=direction)
 
     def draw_testing_warnings(self, context, col, armature):
         col.separator()
-        
+
         if armature.name != 'Armature':
             draw_error_box(col, [
                 t('EyeTrackingPanel.error.wrongNameArm1'),

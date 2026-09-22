@@ -12,6 +12,7 @@ from . import translate as Translate
 from . import armature_bones as Bones
 from .register import register_wrap
 from .translations import t
+import contextlib
 
 mmd_tools_local_installed = False
 if platform.system() != "Linux":
@@ -32,114 +33,114 @@ class ValidationError(Exception):
 
 class ArmatureValidator:
     """Comprehensive input validation for armature fixing"""
-    
+
     @staticmethod
     def validate_armature_requirements(context, armature):
         """Validate all requirements before processing begins"""
         errors = []
         warnings = []
-        
+
         if not armature:
             errors.append("No armature found in the scene")
             return errors, warnings
-            
+
         if not armature.data:
             errors.append("Armature has no data")
             return errors, warnings
-        
+
         if any(armature.lock_location) or any(armature.lock_rotation) or any(armature.lock_scale):
             warnings.append("Armature has locked transforms - these will be unlocked")
-        
+
         bone_count = len(armature.data.bones)
         if bone_count == 0:
             errors.append("Armature has no bones")
         elif bone_count > 1000:
             warnings.append(f"Armature has {bone_count} bones - processing may be slow")
-        
+
         if ArmatureValidator._is_rigify_armature(armature):
             errors.append("Rigify and Metarig armatures are not supported. Please use Rigify to Unity plugin instead.")
-        
+
         mesh_errors, mesh_warnings = ArmatureValidator._validate_meshes(context, armature)
         errors.extend(mesh_errors)
         warnings.extend(mesh_warnings)
-        
+
         required_bone_groups = [
             ['Hips', 'Spine'],
             ['Head', 'Neck'],
         ]
-        
+
         for bone_group in required_bone_groups:
             if not any(bone.name in bone_group for bone in armature.data.bones):
                 warnings.append(f"No bones found from group: {', '.join(bone_group)}")
-        
+
         return errors, warnings
-    
+
     @staticmethod
     def _is_rigify_armature(armature):
         """Check if armature is Rigify/Metarig"""
         if armature.name.lower() == 'metarig':
             return True
-            
+
         rigify_bones = {'brow.B.L', 'lip.B.R', 'lip.T.R', 'lip.B.L', 'lip.T.L'}
-        
+
         for bone in armature.data.bones:
             if bone.name.startswith(('DEF-', 'MCH-', 'ORG-')) or bone.name in rigify_bones:
                 return True
-                
+
         return False
-    
+
     @staticmethod
     def _validate_meshes(context, armature):
         """Validate mesh requirements"""
         errors = []
         warnings = []
-        
+
         meshes = Common.get_meshes_objects()
-        
+
         if not meshes:
             is_vrm = False
             for mesh in Common.get_meshes_objects(mode=2):
                 if mesh.name.endswith(('.baked', '.baked0')):
                     is_vrm = True
                     break
-            
+
             if not is_vrm:
                 errors.append("No meshes found in the scene")
-        
-        
+
+
         for mesh in meshes:
             if not mesh.vertex_groups:
                 warnings.append(f"Mesh '{mesh.name}' has no vertex groups")
-            
+
             uv_issues = 0
             for uv_layer in mesh.data.uv_layers:
                 uvs = np.empty(len(uv_layer.data) * 2, dtype=np.float32)
                 uv_layer.data.foreach_get('uv', uvs)
                 uv_issues += int(np.isnan(uvs.reshape(-1, 2)).any(axis=1).sum())
-            
+
             if uv_issues > 0:
                 warnings.append(f"Mesh '{mesh.name}' has {uv_issues} faulty UV coordinates that will be fixed")
-        
+
         return errors, warnings
 
 
 class BoneCache:
     """Lightweight cache system for bone lookups"""
-    
+
     def __init__(self, armature):
         self.armature = armature
         self.bone_name_map = {}
         self._build_name_cache()
-    
+
     def _build_name_cache(self):
         """Build lightweight name mapping cache only"""
         for bone in self.armature.data.bones:
             self.bone_name_map[bone.name.lower()] = bone.name
-    
+
     def find_bone_by_name(self, name):
         """Find bone by name with caching"""
         return self.bone_name_map.get(name.lower())
-    
+
     def clear_cache(self):
         """Clear all cached data to prevent memory leaks"""
         self.bone_name_map.clear()
@@ -150,29 +151,29 @@ def convert_bone_morphs_native(context, armature, mmd_root):
     """Native bone morph to shape key conversion for Linux compatibility"""
     if not hasattr(mmd_root, 'bone_morphs') or len(mmd_root.bone_morphs) == 0:
         return
-    
+
     from mathutils import Vector, Quaternion
-    
+
     mesh_objects = Common.get_meshes_objects()
     if not mesh_objects:
         return
-    
+
     mesh = mesh_objects[0]
     Common.set_active(mesh)
-    
+
     if not mesh.data.shape_keys:
         mesh.shape_key_add(name="Basis")
-    
+
     to_translate = []
     for morph in mmd_root.bone_morphs:
         to_translate.append(morph.name)
-    
+
     Translate.update_dictionary(to_translate, translating_shapes=True)
-    
+
     wm = context.window_manager
     current_step = 0
     wm.progress_begin(current_step, len(mmd_root.bone_morphs))
-    
+
     original_transforms = {}
     for bone in armature.pose.bones:
         original_transforms[bone.name] = {
@@ -180,35 +181,35 @@ def convert_bone_morphs_native(context, armature, mmd_root):
             'rotation_quaternion': bone.rotation_quaternion.copy(),
             'rotation_euler': bone.rotation_euler.copy(),
         }
-    
+
     for morph in mmd_root.bone_morphs:
         current_step += 1
         wm.progress_update(current_step)
-        
+
         if not morph.data:
             continue
-            
+
         for morph_data in morph.data:
             if morph_data.bone in armature.pose.bones:
                 bone = armature.pose.bones[morph_data.bone]
-                
+
                 bone.location = original_transforms[bone.name]['location'] + Vector(morph_data.location)
                 offset_quat = Quaternion(morph_data.rotation)
                 bone.rotation_quaternion = original_transforms[bone.name]['rotation_quaternion'] @ offset_quat
-        
+
         context.view_layer.update()
-        
+
         original_name = morph.name
         shape_key_name, _translated = Translate.translate(original_name, add_space=True, translating_shapes=True)
-        shape_key = mesh.shape_key_add(name=shape_key_name)
-        
+        mesh.shape_key_add(name=shape_key_name)
+
         for bone_name, transforms in original_transforms.items():
             if bone_name in armature.pose.bones:
                 bone = armature.pose.bones[bone_name]
                 bone.location = transforms['location']
                 bone.rotation_quaternion = transforms['rotation_quaternion']
                 bone.rotation_euler = transforms['rotation_euler']
-    
+
     wm.progress_end()
     context.view_layer.update()
 
@@ -226,78 +227,73 @@ class FixArmature(bpy.types.Operator):
         if not Common.get_armature():
             return False
 
-        if len(Common.get_armature_objects()) == 0:
-            return False
-
-        return True
+        return len(Common.get_armature_objects()) != 0
 
     def execute(self, context):
         saved_data = Common.SavedData()
         armature = Common.get_armature()
-        
+
         try:
             errors, warnings = ArmatureValidator.validate_armature_requirements(context, armature)
-            
+
             for warning in warnings:
                 self.report({'WARNING'}, warning)
-            
+
             if errors:
                 for error in errors:
                     self.report({'ERROR'}, error)
                 return {'CANCELLED'}
-                
+
         except Exception as e:
             self.report({'ERROR'}, f"Validation failed: {e!s}")
             return {'CANCELLED'}
-        
+
         bone_cache = BoneCache(armature)
-        
+
         bone_collections_backup = []
         mmd_root = None
-        try:
+        with contextlib.suppress(AttributeError):
             mmd_root = armature.parent.mmd_root
-        except AttributeError:
-            pass
-                
+
         if mmd_root:
             Common.set_active(armature)
             Common.switch('EDIT')
-            
+
             for collection in armature.data.collections:
                 collection_data = {
                     'name': collection.name,
                     'is_visible': collection.is_visible,
                     'bones': []
                 }
-                
+
                 for bone in collection.bones:
                     collection_data['bones'].append(bone.name)
-                
+
                 bone_collections_backup.append(collection_data)
-            
+
             Common.switch('OBJECT')
-            
+
             for collection in list(armature.data.collections):
                 armature.data.collections.remove(collection)
-        
+
         is_rigify = False
         rigify_bones = {'brow.B.L', 'lip.B.R', 'lip.T.R', 'lip.B.L', 'lip.T.L'}
-        
+
         if armature.name.lower() == 'metarig':
             is_rigify = True
-        
+
         if not is_rigify:
             for bone in armature.data.bones:
                 if bone.name.startswith(('DEF-', 'MCH-', 'ORG-')) or bone.name in rigify_bones:
                     is_rigify = True
                     break
-                
+
         if is_rigify:
-            Common.show_error(3, ["Rigify and Metarig armatures are not", 
-                                "supported. Please use Rigify to Unity", 
+            Common.show_error(3, ["Rigify and Metarig armatures are not",
+                                "supported. Please use Rigify to Unity",
                                 "plugin instead.",
                                 "If you think this is a error, then make sure your",
-                                "bones and amrature do not have metarig", 
+                                "bones and amrature do not have metarig",
                                 "names or Rigify names."])
             return {'CANCELLED'}
 
@@ -335,7 +331,7 @@ class FixArmature(bpy.types.Operator):
         for key, value in temp_rename_bones.items():
             if key == 'Spine':
                 continue
-            bone_list = temp_reweight_bones.get(key) 
+            bone_list = temp_reweight_bones.get(key)
             if not bone_list:
                 temp_reweight_bones[key] = value
             else:
@@ -358,7 +354,7 @@ class FixArmature(bpy.types.Operator):
 
         print('DOUBLE ENTRIES:')
         print('RENAME:')
-        name_list = []  
+        name_list = []
         for key, value in temp_rename_bones.items():
             for name in value:
                 if name.lower() not in name_list:
@@ -366,7 +362,7 @@ class FixArmature(bpy.types.Operator):
                 else:
                     print(key + " | " + name)
         print('REWEIGHT:')
-        name_list = [] 
+        name_list = []
         for key, value in temp_reweight_bones.items():
             for name in value:
                 if name.lower() not in name_list:
@@ -376,10 +372,8 @@ class FixArmature(bpy.types.Operator):
         print('DOUBLES END')
 
         mmd_root = None
-        try:
+        with contextlib.suppress(AttributeError):
             mmd_root = armature.parent.mmd_root
-        except AttributeError:
-            pass
 
         if mmd_root:
             if mmd_tools_local_installed:
@@ -387,14 +381,14 @@ class FixArmature(bpy.types.Operator):
                 mmd_root.use_sphere_texture = False
 
             if hasattr(mmd_root, 'bone_morphs') and len(mmd_root.bone_morphs) > 0:
-                
+
                 if mmd_tools_local_installed:
                     to_translate = []
                     for morph in mmd_root.bone_morphs:
                         to_translate.append(morph.name)
-                    
+
                     Translate.update_dictionary(to_translate, translating_shapes=True)
-                    
+
                     current_step = 0
                     wm.progress_begin(current_step, len(mmd_root.bone_morphs))
 
@@ -558,10 +552,7 @@ class FixArmature(bpy.types.Operator):
 
         Common.apply_transforms()
 
-        if context.scene.join_meshes:
-            meshes = [Common.join_meshes()]
-        else:
-            meshes = Common.get_meshes_objects()
+        meshes = [Common.join_meshes()] if context.scene.join_meshes else Common.get_meshes_objects()
 
         for mesh in meshes:
             Common.unselect_all()
@@ -586,7 +577,7 @@ class FixArmature(bpy.types.Operator):
                         if shapekey.name.startswith(categorie):
                             shapekey_order.append(shapekey.name)
 
-                Common.sort_shape_keys(mesh.name, shapekey_order)        
+                Common.sort_shape_keys(mesh.name, shapekey_order)
 
             Common.clean_shapekeys(mesh)
             Common.save_shapekey_order(mesh.name)
@@ -642,7 +633,7 @@ class FixArmature(bpy.types.Operator):
 
 
         steps += len(armature.data.edit_bones)
-        
+
         bone_collections = armature.data.collections
         default_collection_name = "Bones"
         bone_collection = bone_collections.get(default_collection_name)
@@ -652,7 +643,7 @@ class FixArmature(bpy.types.Operator):
 
         for bone in armature.data.edit_bones:
             bone_collection.assign(bone)
-        
+
         for bone in armature.data.edit_bones:
             if bone.name in Bones.bone_list or bone.name.startswith(tuple(Bones.bone_list_with)):
                 if bone.parent is not None:
@@ -858,7 +849,7 @@ class FixArmature(bpy.types.Operator):
                     if 'right' in bone.name.lower():
                         parent.name = 'Right ' + value
                         break
-                    elif 'left' in bone.name.lower():
+                    if 'left' in bone.name.lower():
                         parent.name = 'Left ' + value
                         break
 
@@ -869,7 +860,7 @@ class FixArmature(bpy.types.Operator):
                     if 'right' in bone.name.lower():
                         parent.name = 'Right ' + value
                         break
-                    elif 'left' in bone.name.lower():
+                    if 'left' in bone.name.lower():
                         parent.name = 'Left ' + value
                         break
 
@@ -1048,7 +1039,7 @@ class FixArmature(bpy.types.Operator):
         Common.fix_zero_length_bones(armature)
 
         bones_to_delete = []
-        
+
         meshes = Common.get_meshes_objects()
 
         for mesh in meshes:
@@ -1271,7 +1262,7 @@ class FixArmature(bpy.types.Operator):
         ])
 
         Common.fix_armature_names()
-        
+
         fixed_uv_coords = False
         armature.show_in_front = False
         wm.progress_end()
@@ -1307,7 +1298,7 @@ def check_hierarchy(check_parenting, correct_hierarchy_array):
     for correct_hierarchy in correct_hierarchy_array:
         line = ' - '
 
-        for index, bone in enumerate(correct_hierarchy):
+        for bone in correct_hierarchy:
             if bone not in missing_bones and bone not in armature.data.bones:
                 missing_bones.append(bone)
                 if len(line) > 3:

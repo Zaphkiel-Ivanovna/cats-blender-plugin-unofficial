@@ -83,7 +83,7 @@ def load_translations(override_language=None):
         print("DEFAULT TRANSLATION FILE 'en_US.json' NOT FOUND.")
     else:
         print(f"Loading translation file: {translation_file}")
-        with open(translation_file, 'r', encoding="utf8") as file:
+        with open(translation_file, encoding="utf8") as file:
             dictionary = json.load(fp=file)["messages"]
         last_loaded_language = language_to_load
         print(f"Loaded {len(dictionary)} translations from {language_to_load}")
@@ -117,7 +117,6 @@ def get_languages_list(self, context):
 
 
 def update_ui(self, context):
-    global _addon_startup_time
 
     print("update_ui function called")
 
@@ -149,7 +148,7 @@ def update_ui(self, context):
                 print("Language changed successfully!")
             except Exception as e:
                 print(f"Script reload failed: {e}")
-            return None
+            return
 
         bpy.app.timers.register(delayed_reload, first_interval=2.0)
     else:
@@ -162,14 +161,14 @@ def get_language_from_settings():
             settings_data = json.load(file)
     except FileNotFoundError:
         print("SETTINGS FILE NOT FOUND!")
-        return
+        return None
     except json.decoder.JSONDecodeError:
         print("ERROR FOUND IN SETTINGS FILE")
-        return
+        return None
 
     if not settings_data:
         print("NO DATA IN SETTINGS FILE")
-        return
+        return None
 
     lang = settings_data.get("ui_lang")
     if not lang or "auto" in lang.lower():
@@ -197,7 +196,7 @@ def convert_locale_to_language_code(blender_locale):
             print(f"Found exact locale match: {lang_code}")
             return lang_code
 
-    language_only = locale_str.split("_")[0].lower() if "_" in locale_str else locale_str.lower()
+    language_only = locale_str.split("_", maxsplit=1)[0].lower() if "_" in locale_str else locale_str.lower()
     for lang_code in available:
         if lang_code.lower().startswith(language_only):
             print(f"Found language match: {lang_code}")
@@ -208,14 +207,14 @@ def convert_locale_to_language_code(blender_locale):
 
 def reload_scripts():
     bpy.ops.script.reload()
-    return None
+    return
 
 
 @register_wrap
 class DownloadTranslations(bpy.types.Operator):
     bl_idname = 'cats_translations.download_latest'
     bl_label = 'Download Latest Translations'
-    bl_description = 'Download the latest translations for cats UI and internal dictionary'   
+    bl_description = 'Download the latest translations for cats UI and internal dictionary'
     bl_options = {'INTERNAL'}
 
     def execute(self, context):

@@ -7,6 +7,7 @@ import addon_utils
 
 from .register import register_wrap
 from .translations import t
+import contextlib
 
 @register_wrap
 class EnableIMScale(bpy.types.Operator):
@@ -19,10 +20,8 @@ class EnableIMScale(bpy.types.Operator):
         for mod in addon_utils.modules():
             if mod.bl_info['name'] == "Immersive Scaler":
                 if mod.bl_info['version'] < (0, 5, 2) and addon_utils.check(mod.__name__)[0]:
-                    try:
+                    with contextlib.suppress(Exception):
                         bpy.ops.preferences.addon_disable(module=mod.__name__)
-                    except Exception:
-                        pass
                     continue
 
         for mod in addon_utils.modules():

@@ -274,7 +274,7 @@ class ShapeKeyPruner(bpy.types.Operator):
 
         if (len(shape_keys_to_delete) > 0):
             report_messages.append(t('ShapeKeyPruner.removedPrefix'))
-        
+
             for keyblock_name in shape_keys_to_delete:
                 mesh.shape_key_remove(mesh.data.shape_keys.key_blocks[keyblock_name])
                 report_messages.append(keyblock_name)

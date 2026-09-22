@@ -5,16 +5,17 @@ from . import common as Common
 from .register import register_wrap
 from collections import OrderedDict
 from .translations import t
+import contextlib
 
 class VisemeCache:
     _cache = {}
-    
+
     @classmethod
     def get_cached_shape(cls, key, mix_data):
         """Get cached shape key data if available"""
         cache_key = (key, tuple(tuple(x) for x in mix_data))
         return cls._cache.get(cache_key)
-    
+
     @classmethod
     def cache_shape(cls, key, mix_data, shape_data):
         """Cache generated shape key data"""
@@ -26,34 +27,34 @@ def preview_viseme(mesh, mix_data, shape_intensity):
     original_values = {}
     for shape_key in mesh.data.shape_keys.key_blocks:
         original_values[shape_key.name] = shape_key.value
-    
+
     for shape_data in mix_data:
         shape_name, value = shape_data
         if shape_name in mesh.data.shape_keys.key_blocks:
             mesh.data.shape_keys.key_blocks[shape_name].value = value * shape_intensity
-    
+
     return original_values
 
 class VisemePreview:
     _preview_data = {}
     _active = False
     _preview_shapes = None
-    
+
     @classmethod
     def start_preview(cls, context, mesh, shapes):
         if not mesh or not mesh.data or not mesh.data.shape_keys:
             return False
-            
+
         cls._active = True
         cls._preview_data = {}
-        
+
         for shape_key in mesh.data.shape_keys.key_blocks:
             cls._preview_data[shape_key.name] = shape_key.value
-            
+
         shape_a = context.scene.mouth_a
         shape_o = context.scene.mouth_o
         shape_ch = context.scene.mouth_ch
-        
+
         cls._preview_shapes = OrderedDict()
         cls._preview_shapes['vrc.v_aa'] = {'mix': [[(shape_a), (0.9998)]]}
         cls._preview_shapes['vrc.v_ch'] = {'mix': [[(shape_ch), (0.9996)]]}
@@ -70,42 +71,42 @@ class VisemePreview:
         cls._preview_shapes['vrc.v_sil'] = {'mix': [[(shape_a), (0.0002)], [(shape_ch), (0.0002)]]}
         cls._preview_shapes['vrc.v_ss'] = {'mix': [[(shape_ch), (0.8)]]}
         cls._preview_shapes['vrc.v_th'] = {'mix': [[(shape_a), (0.4)], [(shape_o), (0.15)]]}
-        
+
         return True
-    
+
     @classmethod
     def update_preview(cls, context):
         if not cls._active or not cls._preview_shapes:
             return
-            
+
         mesh = Common.get_objects()[context.scene.mesh_name_viseme]
         viseme_data = cls._preview_shapes.get(context.scene.viseme_preview_selection)
         if viseme_data:
             cls.show_viseme(context, mesh, context.scene.viseme_preview_selection, viseme_data['mix'])
-    
+
     @classmethod
     def show_viseme(cls, context, mesh, viseme_name, mix_data):
         if not cls._active:
             return
-            
+
         for shape_key in mesh.data.shape_keys.key_blocks:
             shape_key.value = 0
-            
+
         for shape_name, value in mix_data:
             if shape_name in mesh.data.shape_keys.key_blocks:
                 mesh.data.shape_keys.key_blocks[shape_name].value = value * context.scene.shape_intensity
-                
+
         context.view_layer.update()
-    
+
     @classmethod
     def end_preview(cls, mesh):
         if not cls._active:
             return
-            
+
         for shape_name, value in cls._preview_data.items():
             if shape_name in mesh.data.shape_keys.key_blocks:
                 mesh.data.shape_keys.key_blocks[shape_name].value = value
-                
+
         cls._active = False
         cls._preview_data.clear()
         cls._preview_shapes = None
@@ -116,10 +117,10 @@ class VisemePreviewOperator(bpy.types.Operator):
     bl_label = t('VisemePreviewOperator.label')
     bl_description = t('VisemePreviewOperator.desc')
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
-    
+
     def execute(self, context):
         mesh = Common.get_objects()[context.scene.mesh_name_viseme]
-        
+
         if context.scene.viseme_preview_mode:
             VisemePreview.end_preview(mesh)
             context.scene.viseme_preview_mode = False
@@ -127,18 +128,18 @@ class VisemePreviewOperator(bpy.types.Operator):
             if not mesh or not mesh.data or not mesh.data.shape_keys:
                 self.report({'ERROR'}, t('AutoVisemeButton.error.noShapekeys'))
                 return {'CANCELLED'}
-                
+
             if VisemePreview.start_preview(context, mesh, [context.scene.mouth_a, context.scene.mouth_o, context.scene.mouth_ch]):
                 context.scene.viseme_preview_mode = True
                 context.scene.viseme_preview_selection = 'vrc.v_aa'
-            
+
         return {'FINISHED'}
 
 def validate_deformation(mesh, mix_data):
     """Validates if shape key deformations are within reasonable ranges"""
     base_coords = [v.co.copy() for v in mesh.data.shape_keys.key_blocks['Basis'].data]
     max_deform = 0
-    
+
     for shape_data in mix_data:
         shape_name, value = shape_data
         if shape_name in mesh.data.shape_keys.key_blocks:
@@ -146,7 +147,7 @@ def validate_deformation(mesh, mix_data):
             for i, v in enumerate(shape_key.data):
                 deform = (v.co - base_coords[i]).length * value
                 max_deform = max(max_deform, deform)
-    
+
     mesh_size = max(mesh.dimensions)
     return max_deform < (mesh_size * 0.4)
 
@@ -159,9 +160,7 @@ class AutoVisemeButton(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if not Common.get_meshes_objects(check=False):
-            return False
-        return True
+        return Common.get_meshes_objects(check=False)
 
     def execute(self, context):
         mesh = Common.get_objects()[context.scene.mesh_name_viseme]
@@ -309,23 +308,23 @@ class AutoVisemeButton(bpy.types.Operator):
         for index, key in enumerate(shapekey_data):
             obj = shapekey_data[key]
             wm.progress_update(index)
-            
+
             cached_data = VisemeCache.get_cached_shape(key, obj['mix'])
             if cached_data:
                 continue
-                
+
             if context.scene.viseme_validate_deformation:
                 if not validate_deformation(mesh, obj['mix']):
                     self.report({'WARNING'}, t('AutoVisemeButton.warning.deformation').format(key))
-            
+
             if context.scene.viseme_preview_mode:
                 original_values = preview_viseme(mesh, obj['mix'], context.scene.shape_intensity)
-            
+
             self.mix_shapekey(context, renamed_shapes, obj['mix'], key, context.scene.shape_intensity)
-            
+
             shape_data = [v.co.copy() for v in mesh.data.shape_keys.key_blocks[key].data]
             VisemeCache.cache_shape(key, obj['mix'], shape_data)
-            
+
             if context.scene.viseme_preview_mode:
                 for shape_name, value in original_values.items():
                     if shape_name in mesh.data.shape_keys.key_blocks:
@@ -355,20 +354,14 @@ class AutoVisemeButton(bpy.types.Operator):
                 shapekey.name = shapes[2]
                 renamed_shapes[2] = shapes[2]
 
-        try:
+        with contextlib.suppress(TypeError):
             context.scene.mouth_a = renamed_shapes[0]
-        except TypeError:
-            pass
 
-        try:
+        with contextlib.suppress(TypeError):
             context.scene.mouth_o = renamed_shapes[1]
-        except TypeError:
-            pass
 
-        try:
+        with contextlib.suppress(TypeError):
             context.scene.mouth_ch = renamed_shapes[2]
-        except TypeError:
-            pass
 
         bpy.context.object.active_shape_key_index = 0
 
@@ -402,7 +395,7 @@ class AutoVisemeButton(bpy.types.Operator):
             selector = shapekey_data_context[0]
             shapekey_value = shapekey_data_context[1]
 
-            for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
+            for shapekey in mesh.data.shape_keys.key_blocks:
                 if selector == shapekey.name:
                     shapekey.slider_max = 10
                     shapekey.value = shapekey_value * intensity
@@ -410,7 +403,7 @@ class AutoVisemeButton(bpy.types.Operator):
         mesh.shape_key_add(name=rename_to, from_mix=True)
 
         bpy.ops.object.shape_key_clear()
-        for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
+        for shapekey in mesh.data.shape_keys.key_blocks:
             if shapekey.name in shapes:
                 shapekey.slider_max = 1
         mesh.active_shape_key_index = 0

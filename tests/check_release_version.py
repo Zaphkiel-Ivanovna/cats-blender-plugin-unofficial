@@ -9,7 +9,6 @@ release. __init__.CATS_VERSION and blender_manifest.toml carry the same three pa
 """
 
 import ast
-import io
 import os
 import re
 import sys
@@ -19,7 +18,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def cats_version():
-    with io.open(os.path.join(ROOT, "__init__.py"), encoding="utf-8") as handle:
+    with open(os.path.join(ROOT, "__init__.py"), encoding="utf-8") as handle:
         tree = ast.parse(handle.read())
     for node in tree.body:
         if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "CATS_VERSION":

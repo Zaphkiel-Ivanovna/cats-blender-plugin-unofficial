@@ -21,14 +21,13 @@ from ..tools import iconloader as Iconloader
 from .register import register_wrap
 from .translations import t
 from mmd_tools_local.translations import DictionaryEnum
+import contextlib
 
 current_blender_version = str(bpy.app.version[:2])[1:-1].replace(', ', '.')
 
 mmd_tools_local_installed = False
-try:
+with contextlib.suppress(Exception):
     mmd_tools_local_installed = True
-except Exception:
-    pass
 
 formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.zip'
 format_list = formats.replace('*.', '').split(';')
@@ -179,7 +178,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
         elif file_ending == 'zip':
             with zipfile.ZipFile(file_path, 'r') as zipObj:
-                global zip_files
 
                 for content in zipObj.namelist():
                     content_name = os.path.basename(content)
@@ -233,7 +231,7 @@ def fix_bone_orientations(armature):
 
 def fix_armatures_post_import(pre_import_objects):
     saved_states = Common.SavedData()
-    
+
     arm_added_during_import = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE' and obj not in pre_import_objects]
     for armature in arm_added_during_import:
         print('Added: ', armature.name)
@@ -243,7 +241,7 @@ def fix_armatures_post_import(pre_import_objects):
         if hasattr(armature, 'draw_type'):
             armature.draw_type = 'WIRE'
             armature.show_in_front = True
-            
+
     saved_states.load(load_mode=False, load_select=False, load_hide=True)
 
 
@@ -305,10 +303,8 @@ def get_zip_content(self, context):
 
 
 def encode_str(s):
-    try:
+    with contextlib.suppress(UnicodeEncodeError, UnicodeDecodeError):
         s = s.encode('cp437').decode('cp932')
-    except (UnicodeEncodeError, UnicodeDecodeError):
-        pass
     return s
 
 
@@ -419,9 +415,7 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        if Common.get_armature() is None:
-            return False
-        return True
+        return Common.get_armature() is not None
 
     def execute(self, context):
         Common.remove_unused_objects()
@@ -490,8 +484,6 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             if new_armature.animation_data.action is None:
                 new_armature.animation_data.action = bpy.data.actions.new("EMPTY_SOURCE")
 
-            active_obj = new_armature
-            ad = armature.animation_data
 
             reverse_bonedict = {v: k for k, v in bonedict.items()}
             for bone in new_armature.data.bones:
@@ -506,7 +498,7 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             Common.set_active(new_armature)
 
             bpy.ops.object.delete(use_global=True, confirm=False)
-            
+
         return {'FINISHED'}
 
 @register_wrap
@@ -760,7 +752,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             bpy.ops.import_scene.smd('EXEC_DEFAULT',files=[{'name': "barney_reference.smd"}], append = "NEW_ARMATURE",directory=os.path.dirname(os.path.abspath(__file__))+"/../extern_tools/valve_resources/")
         except AttributeError:
             bpy.ops.cats_importer.install_source('INVOKE_DEFAULT')
-            return
+            return None
         print("cleaning imported armature")
         objects = [j.name for j in bpy.context.selected_objects]
         barneycollection = bpy.data.collections.get("barney_collection")
@@ -774,14 +766,10 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 bpy.ops.object.delete(use_global=False)
                 continue
             for collection in bpy.data.collections:
-                try:
+                with contextlib.suppress(Exception):
                     collection.objects.unlink(newobj)
-                except Exception:
-                    pass
-            try:
+            with contextlib.suppress(Exception):
                 bpy.context.collection.objects.unlink(newobj)
-            except Exception:
-                pass
             barneycollection.objects.link(newobj)
         bpy.context.collection.children.link(barneycollection)
         Common.unselect_all()
@@ -798,24 +786,16 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             refcoll = bpy.data.collections.new(sanitized_model_name+"_ref")
         for obj in armature.children:
             for collection in bpy.data.collections:
-                try:
+                with contextlib.suppress(Exception):
                     collection.objects.unlink(obj)
-                except Exception:
-                    pass
-            try:
+            with contextlib.suppress(Exception):
                 bpy.context.collection.objects.unlink(obj)
-            except Exception:
-                pass
             refcoll.objects.link(obj)
         for collection in bpy.data.collections:
-            try:
+            with contextlib.suppress(Exception):
                 collection.objects.unlink(armature)
-            except Exception:
-                pass
-        try:
+        with contextlib.suppress(Exception):
             bpy.context.collection.objects.unlink(armature)
-        except Exception:
-            pass
         refcoll.objects.link(armature)
         bpy.context.collection.children.link(refcoll)
 
@@ -893,7 +873,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
 
         print("grabbing barney armature")
         barney_armature = None
-        barney_mesh = None
         barneycollection = bpy.data.collections.get("barney_collection")
         assert(barneycollection is not None)
         assert(len(barneycollection.objects) > 0)
@@ -921,7 +900,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         print("positioning bones for barney armature at your armature's bones PLEASE HAVE A PELVIS BONE")
         barney_pose_bone_names = [j.name for j in children_bone_recursive(barney_armature.pose.bones["ValveBiped.Bip01_Pelvis"])]
 
-        armature_matrixes = {}
         barney_armature_name = barney_armature.name
         body_armature_name = body_armature.name
         for barney_bone_name in barney_pose_bone_names:
@@ -965,14 +943,10 @@ class ExportGmodPlayermodel(bpy.types.Operator):
 
         print("putting armature back under reference collection")
         for collection in bpy.data.collections:
-            try:
+            with contextlib.suppress(Exception):
                 collection.objects.unlink(bpy.data.objects[body_armature_name])
-            except Exception:
-                pass
-        try:
+        with contextlib.suppress(Exception):
             bpy.context.collection.objects.unlink(bpy.data.objects[body_armature_name])
-        except Exception:
-            pass
         refcoll.objects.link(bpy.data.objects[body_armature_name])
 
         print("Duplicating reference collection to make phys collection")
@@ -987,14 +961,10 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         Common.select(parentobj,True)
         bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'})
         for obj in context.selected_objects:
-            try:
+            with contextlib.suppress(Exception):
                 refcoll.objects.unlink(obj)
-            except Exception:
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 bpy.context.collection.objects.unlink(obj)
-            except Exception:
-                pass
             physcoll.objects.link(obj)
 
 
@@ -1008,14 +978,10 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         Common.select(parentobj,True)
         bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'})
         for obj in context.selected_objects:
-            try:
+            with contextlib.suppress(Exception):
                 refcoll.objects.unlink(obj)
-            except Exception:
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 bpy.context.collection.objects.unlink(obj)
-            except Exception:
-                pass
             armcoll.objects.link(obj)
 
         print("making phys parts")
@@ -1135,7 +1101,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             Common.switch('OBJECT')
 
         Common.unselect_all()
-        for bonename,obj in convexobjects.items():
+        for obj in convexobjects.values():
             Common.select(obj,True)
         print("if this doesn't work, then you have bad weights!!")
         Common.set_active(next(iter(convexobjects.values())))
@@ -1174,7 +1140,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 arms_armature.data.edit_bones.active = bone
             else:
                 print("Getting upper arm for side "+side+" Has failed! Exiting!")
-                return
+                return None
 
             bpy.ops.armature.select_similar(type='CHILDREN')
             for bone in bpy.context.selected_editable_bones:
@@ -1513,18 +1479,14 @@ $sequence \"proportions\"{
         if bpy.data.actions.get("idle"):
             Common.unselect_all()
             Common.set_active(body_armature)
-            try:
+            with contextlib.suppress(Exception):
                 body_armature.animation_data_create()
-            except Exception:
-                pass
             body_armature.animation_data.action = bpy.data.actions["idle"]
         else:
             Common.unselect_all()
             Common.set_active(body_armature)
-            try:
+            with contextlib.suppress(Exception):
                 body_armature.animation_data_create()
-            except Exception:
-                pass
             body_armature.animation_data.action = bpy.data.actions.new(name="idle")
 
         Common.unselect_all()
@@ -1698,18 +1660,14 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
         if bpy.data.actions.get("idle_arms"):
             Common.unselect_all()
             Common.set_active(body_armature)
-            try:
+            with contextlib.suppress(Exception):
                 body_armature.animation_data_create()
-            except Exception:
-                pass
             body_armature.animation_data.action = bpy.data.actions["idle_arms"]
         else:
             Common.unselect_all()
             Common.set_active(body_armature)
-            try:
+            with contextlib.suppress(Exception):
                 body_armature.animation_data_create()
-            except Exception:
-                pass
             body_armature.animation_data.action = bpy.data.actions.new(name="idle_arms")
 
         Common.unselect_all()
@@ -1879,7 +1837,7 @@ class ExportModel(bpy.types.Operator):
                     if mat_slot and mat_slot.material and mat_slot.material.users and mat_slot.material.name not in _mat_list:
                         _mat_list.append(mat_slot.material.name)
                         _textures_found = True
-                        
+
                 if Common.has_shapekeys(mesh):
                     for shapekey in mesh.data.shape_keys.key_blocks[1:]:
                         vert_count = 0
@@ -1979,9 +1937,7 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
 
     @classmethod
     def poll(cls, context):
-        if Common.get_armature() is None:
-            return False
-        return True
+        return Common.get_armature() is not None
 
     def draw(self, context):
         layout = self.layout
@@ -2000,12 +1956,12 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             armature = Common.get_armature()
             Common.unselect_all()
             Common.set_active(armature)
-            
+
             from mmd_tools_local.core.vmd import importer as vmd_importer
             from mmd_tools_local import auto_scene_setup
             from mmd_tools_local.utils import makePmxBoneMap
             from mmd_tools_local.translations import DictionaryEnum
-            
+
             bone_mapper = None
             if self.bone_mapper == "PMX":
                 bone_mapper = makePmxBoneMap
@@ -2015,7 +1971,7 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
                     use_underscore=self.use_underscore,
                     translator=DictionaryEnum.get_translator(self.dictionary),
                 ).init
-            
+
             importer = vmd_importer.VMDImporter(
                 filepath=self.filepath,
                 scale=0.08,
@@ -2025,15 +1981,15 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
                 use_mirror=False,
                 use_NLA=False
             )
-            
+
             importer.assign(armature)
-            
+
             auto_scene_setup.setupFrameRanges()
             auto_scene_setup.setupFps()
-            
+
             self.report({'INFO'}, f'Successfully imported animation from "{os.path.basename(self.filepath)}"')
             return {'FINISHED'}
-            
+
         except Exception as e:
             import traceback
             err_msg = traceback.format_exc()
@@ -2053,9 +2009,7 @@ class Cats_OT_ExportResonite(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        if len(Common.get_armature_objects()) > 0:
-            return True
-        return False
+        return len(Common.get_armature_objects()) > 0
 
     def execute(self, context: bpy.types.Context):
         bpy.ops.export_scene.gltf('INVOKE_AREA',
@@ -2087,7 +2041,6 @@ class ErrorDisplay(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        global _meshes_count, _tris_count, _mat_list, _broken_shapes, _textures_found, _eye_meshes_not_named_body
         self.meshes_count = _meshes_count
         self.tris_count = _tris_count
         self.mat_list = _mat_list

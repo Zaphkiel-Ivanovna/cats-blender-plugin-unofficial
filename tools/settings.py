@@ -4,7 +4,7 @@ import bpy
 import json
 import copy
 import collections
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from collections import OrderedDict
 from contextlib import contextmanager
 
@@ -113,7 +113,7 @@ def load_settings():
             to_reset_settings.append(setting)
             print('RESET SETTING', setting)
 
-    utc_now = datetime.strptime(datetime.now(timezone.utc).strftime(globs.time_format), globs.time_format)
+    utc_now = datetime.strptime(datetime.now(UTC).strftime(globs.time_format), globs.time_format)
     for setting in ['last_supporter_update']:
         if setting not in to_reset_settings and settings_data.get(setting):
             try:

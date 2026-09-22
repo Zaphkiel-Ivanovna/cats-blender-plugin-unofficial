@@ -10,7 +10,7 @@ import collections
 import requests.exceptions
 import csv
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from collections import OrderedDict
 
 from . import common as Common
@@ -50,26 +50,26 @@ class TranslateShapekeyButton(bpy.types.Operator):
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
             cats_dir = get_cats_dir()
-            
+
         if not os.path.exists(cats_dir):
             try:
-                os.makedirs(cats_dir) 
+                os.makedirs(cats_dir)
             except OSError:
                 self.report({'ERROR'}, "Unable to create export folder. Please manually set the export directory")
                 return {'CANCELLED'}
-                
-        if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):  
+
+        if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):
             self.report({'ERROR'}, "Unable to write to export folder. Please manually set the export directory")
             return {'CANCELLED'}
-            
+
         skip_locked_shape_keys = bpy.context.scene.skip_locked_shape_keys
         if context.scene.export_translate_csv:
-            
+
             blend_path = bpy.context.blend_data.filepath
             if not blend_path:
                 self.report({'ERROR'}, "Please save blend first!")
                 return {'CANCELLED'}
-            
+
             to_translate = []
             for mesh in Common.get_meshes_objects(mode=2):
                 if Common.has_shapekeys(mesh):
@@ -79,7 +79,7 @@ class TranslateShapekeyButton(bpy.types.Operator):
 
             update_dictionary(to_translate, translating_shapes=True, self=self)
             Common.update_shapekey_orders()
-            
+
             shapekeys = []
             i = 0
             for mesh in Common.get_meshes_objects(mode=2):
@@ -88,7 +88,7 @@ class TranslateShapekeyButton(bpy.types.Operator):
                         if can_translate_shape_key(key, skip_locked_shape_keys):
                             original_name = key.name
                             key.name, translated = translate(key.name, add_space=True, translating_shapes=True)
-                
+
                             if translated:
                                 i += 1
                                 shapekeys.append({
@@ -97,9 +97,9 @@ class TranslateShapekeyButton(bpy.types.Operator):
                                     'translated': key.name
                                 })
 
-            blend_name = os.path.splitext(os.path.basename(blend_path))[0] 
+            blend_name = os.path.splitext(os.path.basename(blend_path))[0]
             export_path = os.path.join(str(cats_dir), blend_name + "_shapekeys.csv")
-            
+
             with open(export_path, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['mesh/object', 'original', 'translated'])
@@ -148,32 +148,32 @@ class TranslateBonesButton(bpy.types.Operator):
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
             cats_dir = get_cats_dir()
-            
+
         if not os.path.exists(cats_dir):
             try:
-                os.makedirs(cats_dir) 
+                os.makedirs(cats_dir)
             except OSError:
                 self.report({'ERROR'}, "Unable to create export folder. Please manually set the export directory")
                 return {'CANCELLED'}
-                
-        if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):  
+
+        if not os.path.exists(cats_dir) or not os.access(cats_dir, os.W_OK):
             self.report({'ERROR'}, "Unable to write to export folder. Please manually set the export directory")
             return {'CANCELLED'}
-            
+
         if context.scene.export_translate_csv:
-            
+
             blend_path = bpy.context.blend_data.filepath
             if not blend_path:
                 self.report({'ERROR'}, "Please save blend first!")
                 return {'CANCELLED'}
-            
+
             to_translate = []
             for armature in Common.get_armature_objects():
                 for bone in armature.data.bones:
                     to_translate.append(bone.name)
 
             update_dictionary(to_translate, self=self)
-            
+
             bones = []
             i = 0
             for armature in Common.get_armature_objects():
@@ -188,9 +188,9 @@ class TranslateBonesButton(bpy.types.Operator):
                             'translated': bone.name
                         })
 
-            blend_name = os.path.splitext(os.path.basename(blend_path))[0] 
+            blend_name = os.path.splitext(os.path.basename(blend_path))[0]
             export_path = os.path.join(str(cats_dir), blend_name + "_bones.csv")
-            
+
             with open(export_path, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['armature', 'original', 'translated'])
@@ -398,7 +398,7 @@ class TranslateAllButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        
+
         if context.scene.export_translate_csv:
             if not bpy.data.filepath:
                 self.report({'ERROR'}, "Please save the blend file before exporting translations.")
@@ -490,8 +490,8 @@ def load_translations():
 
 
 def update_dictionary(to_translate_list, translating_shapes=False, self=None):
-    global dictionary, dictionary_google
-    regex = u'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]+'
+    global dictionary
+    regex = '[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]+'
 
     use_google_only = False
     if translating_shapes and bpy.context.scene.use_google_only:
@@ -618,7 +618,6 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
 
 
 def translate(to_translate, add_space=False, translating_shapes=False):
-    global dictionary
 
     pre_translation = to_translate
     length = len(to_translate)
@@ -668,7 +667,7 @@ def reset_google_dict():
     global dictionary_google
     dictionary_google = OrderedDict()
 
-    now_utc = datetime.now(timezone.utc).strftime(globs.time_format)
+    now_utc = datetime.now(UTC).strftime(globs.time_format)
 
     dictionary_google['created'] = now_utc
     dictionary_google['translations'] = {}
@@ -685,9 +684,8 @@ def save_google_dict():
 
 def can_translate_shape_key(shapekey, skip_locked_shape_keys):
     if skip_locked_shape_keys:
-        if not shapekey.lock_shape:
-            if 'vrc.' not in shapekey.name:
-                return True
+        if not shapekey.lock_shape and 'vrc.' not in shapekey.name:
+            return True
     else:
         if 'vrc.' not in shapekey.name:
             return True

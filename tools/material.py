@@ -24,10 +24,10 @@ class CombineMaterialsButton(bpy.types.Operator):
     def hash_material(self, material):
         if not material or not material.node_tree:
             return 'empty'
-        
+
         ignore_nodes = {'Material Output', 'mmd_tex_uv', 'Cats Export Shader'}
         hash_components = []
-        
+
         for node in material.node_tree.nodes:
             if node.name in ignore_nodes or node.label in ignore_nodes:
                 continue
@@ -62,14 +62,14 @@ class CombineMaterialsButton(bpy.types.Operator):
     def generate_combined_tex(self):
         self.combined_tex = {}
         material_data = {}
-        
+
         for ob in Common.get_meshes_objects():
             for index, mat_slot in enumerate(ob.material_slots):
                 hash_val = self.hash_material(mat_slot.material)
                 if hash_val not in material_data:
                     material_data[hash_val] = []
                 material_data[hash_val].append({'mat': mat_slot.name, 'index': index})
-        
+
         self.combined_tex = {k: v for k, v in material_data.items() if len(v) > 1}
 
     def batch_assign_materials(self, mesh, material_groups):
@@ -84,12 +84,12 @@ class CombineMaterialsButton(bpy.types.Operator):
     def execute(self, context):
         print('COMBINE MATERIALS!')
         saved_data = Common.SavedData()
-        
+
         Common.set_default_stage()
         Common.remove_rigidbodies_global()
         self.generate_combined_tex()
         Common.switch('OBJECT')
-        
+
         total_combined = 0
         wm = context.window_manager
         meshes = Common.get_meshes_objects()
@@ -107,7 +107,7 @@ class CombineMaterialsButton(bpy.types.Operator):
             Common.switch('OBJECT')
             bpy.ops.object.material_slot_remove_unused()
             Common.clean_material_names(mesh)
-            
+
             wm.progress_update(index)
 
         wm.progress_end()
@@ -185,7 +185,7 @@ class ConvertAllToPngButton(bpy.types.Operator):
         scene.render.image_settings.color_mode = 'RGBA'
         scene.render.image_settings.color_depth = '16'
         scene.render.image_settings.compression = 100
-        image.save_render(tex_path_new, scene=scene)  
+        image.save_render(tex_path_new, scene=scene)
 
         bpy.context.scene.view_settings.view_transform = view_transform
 
@@ -193,4 +193,4 @@ class ConvertAllToPngButton(bpy.types.Operator):
         bpy.data.images[image_name].name = image_name_new
 
         return True
-    
+

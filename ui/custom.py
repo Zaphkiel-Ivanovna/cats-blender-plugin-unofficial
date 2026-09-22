@@ -137,7 +137,7 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
         box = col.box()
         box_col = box.column(align=True)
         box_col.scale_y = 0.75
-        
+
         box_col.prop(context.scene, 'merge_same_bones')
         box_col.prop(context.scene, 'apply_transforms')
         box_col.prop(context.scene, 'merge_armatures_join_meshes')
@@ -156,20 +156,20 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.mergeInto'))
         row.operator(SearchMenuOperator_merge_armature_into.bl_idname,
-                    text=merge_into_name if merge_into_name else t('CustomPanel.selectArmature'), 
+                    text=merge_into_name or t('CustomPanel.selectArmature'),
                     icon=globs.ICON_MOD_ARMATURE)
 
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.toMerge'))
         row.operator(SearchMenuOperator_merge_armature.bl_idname,
-                    text=merge_armature_name if merge_armature_name else t('CustomPanel.selectArmature'), 
+                    text=merge_armature_name or t('CustomPanel.selectArmature'),
                     icon_value=Iconloader.preview_collections["custom_icons"]["UP_ARROW"].icon_id)
 
         if not context.scene.merge_same_bones:
             found = False
             base_armature = Common.get_armature(armature_name=merge_into_name)
             merge_armature = Common.get_armature(armature_name=merge_armature_name)
-            
+
             if merge_armature and base_armature:
                 for bone in Armature_bones.dont_delete_these_main_bones:
                     if 'Eye' not in bone and bone in merge_armature.pose.bones and bone in base_armature.pose.bones:
@@ -180,8 +180,8 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
                 attach_bone_name = Common.get_enum_property_value(context.scene, 'attach_to_bone', Common.get_bones_merge)
                 row = box_col.row(align=True)
                 row.label(text=t('CustomPanel.attachToBone'))
-                row.operator(SearchMenuOperator_attach_to_bone.bl_idname, 
-                           text=attach_bone_name if attach_bone_name else t('CustomPanel.selectBone'), 
+                row.operator(SearchMenuOperator_attach_to_bone.bl_idname,
+                           text=attach_bone_name or t('CustomPanel.selectBone'),
                            icon='BONE_DATA')
             else:
                 row = box_col.row(align=True)
@@ -234,19 +234,19 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.mergeInto'))
         row.operator(SearchMenuOperator_merge_armature_into.bl_idname,
-                    text=merge_into_name if merge_into_name else t('CustomPanel.selectArmature'), 
+                    text=merge_into_name or t('CustomPanel.selectArmature'),
                     icon=globs.ICON_MOD_ARMATURE)
 
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.attachMesh2'))
         row.operator(SearchMenuOperator_attach_mesh.bl_idname,
-                    text=attach_mesh_name if attach_mesh_name else t('CustomPanel.selectMesh'),
+                    text=attach_mesh_name or t('CustomPanel.selectMesh'),
                     icon_value=Iconloader.preview_collections["custom_icons"]["UP_ARROW"].icon_id)
 
         row = box_col.row(align=True)
         row.label(text=t('CustomPanel.attachToBone'))
         row.operator(SearchMenuOperator_attach_to_bone.bl_idname,
-                    text=attach_bone_name if attach_bone_name else t('CustomPanel.selectBone'),
+                    text=attach_bone_name or t('CustomPanel.selectBone'),
                     icon='BONE_DATA')
 
         col.separator()

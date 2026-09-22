@@ -19,7 +19,6 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        scene = context.scene
         layout = self.layout
         box = layout.box()
         col = box.column(align=True)
@@ -32,7 +31,7 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
             t("MMDOptions.info5"),
             t("MMDOptions.info6")
         ])
-        
+
         col.separator()
 
         row = col.row(align=True)
@@ -47,7 +46,7 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
             t("MMDOptions.RemoveRigidBodiesManaulInfo1"),
             t("MMDOptions.RemoveRigidBodiesManaulInfo2")
         ])
-        
+
         col.separator()
 
         row = col.row(align=True)
@@ -72,7 +71,7 @@ class MMDOptionswiki(bpy.types.Operator):
         self.report({'INFO'}, t('MMDOptionswiki.success'))
         return {'FINISHED'}
 
-@register_wrap        
+@register_wrap
 class ModelSettings(bpy.types.Operator):
     bl_idname = "cats_armature.settings"
     bl_label = t('ModelSettings.label')
@@ -129,7 +128,7 @@ class FixArmatureWarning(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
-        
+
         warning_col = col.column(align=True)
         warning_col.scale_y = 1.0
         warning_col.label(text=t('FixArmature.warning.line1'))

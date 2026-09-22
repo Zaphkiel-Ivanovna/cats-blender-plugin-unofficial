@@ -17,9 +17,8 @@ from mathutils import Vector
 from html.parser import HTMLParser
 from functools import lru_cache
 from html.entities import name2codepoint
-from typing import Optional, Any
+from typing import Any
 
-from . import common as Common
 from . import iconloader as Iconloader
 from . import translate as Translate
 from . import armature_bones as Bones
@@ -28,6 +27,7 @@ from .translations import t
 from sys import intern
 
 from mmd_tools_local import utils
+import contextlib
 
 def get_objects():
     return bpy.context.view_layer.objects
@@ -35,13 +35,13 @@ def get_objects():
 
 def get_enum_property_value(property_holder, property_name, items_func=None):
     """Safely get an enum property value, handling integer indices from Blender 5.0.
-    
+
     Args:
         property_holder: The object holding the property (e.g., context.scene)
         property_name: Name of the enum property
         items_func: Optional function to get valid items. If provided, integer indices
                    will be converted to their corresponding identifier strings.
-    
+
     Returns:
         The string identifier value of the enum, or empty string if invalid.
     """
@@ -49,10 +49,10 @@ def get_enum_property_value(property_holder, property_name, items_func=None):
         value = getattr(property_holder, property_name, None)
         if value is None:
             return ''
-        
+
         if isinstance(value, str):
             return value
-        
+
         if isinstance(value, int) and items_func is not None:
             try:
                 items = items_func(property_holder, bpy.context)
@@ -60,7 +60,7 @@ def get_enum_property_value(property_holder, property_name, items_func=None):
                     return items[value][0]
             except Exception:
                 pass
-        
+
         return str(value) if value is not None else ''
     except Exception:
         return ''
@@ -126,33 +126,32 @@ class SavedData:
 def get_armature(armature_name=None):
     if not armature_name:
         armature_name = get_enum_property_value(bpy.context.scene, 'armature', get_armature_list)
-        
+
     if isinstance(armature_name, int):
         armatures = get_armature_objects()
         if 0 <= armature_name < len(armatures):
             return armatures[armature_name]
-        elif armatures:
+        if armatures:
             return armatures[0]
         return None
-        
+
     objects = get_objects()
     if not objects:
         return None
-        
+
     for obj in objects:
-        if obj and obj.type == 'ARMATURE':
-            if obj.name == armature_name:
-                return obj
-                
-    if Common.is_enum_empty(armature_name):
+        if obj and obj.type == 'ARMATURE' and obj.name == armature_name:
+            return obj
+
+    if is_enum_empty(armature_name):
         for obj in objects:
             if obj and obj.type == 'ARMATURE':
                 return obj
-    
+
     for obj in objects:
         if obj and obj.type == 'ARMATURE':
             return obj
-                
+
     return None
 
 def get_armature_objects():
@@ -221,7 +220,7 @@ def select(obj, sel=True):
     if obj is not None:
         hide(obj, False)
         obj.select_set(sel)
-        
+
 
 def hide(obj, val=True):
     if hasattr(obj, 'hide_set'):
@@ -233,7 +232,7 @@ def hide(obj, val=True):
 def is_hidden(obj):
     if hasattr(obj, 'hide_get'):
         return obj.hide_get()
-    elif hasattr(obj, 'hide'):
+    if hasattr(obj, 'hide'):
         return obj.hide
     return False
 
@@ -247,11 +246,11 @@ def switch(new_mode, check_mode=True):
     active = context.view_layer.objects.active
     if check_mode and active and active.mode == new_mode:
         return
-    
+
     if active is None:
         print(f"Warning: No active object when trying to switch to {new_mode} mode")
         return
-        
+
     supported_modes = []
     if active.type == 'MESH':
         supported_modes = ['OBJECT', 'EDIT', 'SCULPT', 'VERTEX_PAINT', 'WEIGHT_PAINT', 'TEXTURE_PAINT']
@@ -261,11 +260,11 @@ def switch(new_mode, check_mode=True):
         supported_modes = ['OBJECT', 'EDIT']
     else:
         supported_modes = ['OBJECT']
-    
+
     if new_mode not in supported_modes:
         print(f"Warning: {active.type} object '{active.name}' does not support {new_mode} mode. Supported modes: {supported_modes}")
         return
-    
+
     if bpy.ops.object.mode_set.poll():
         bpy.ops.object.mode_set(mode=new_mode, toggle=False)
 
@@ -381,8 +380,7 @@ def find_center_vector_of_vertex_group(mesh, vertex_group):
     for vert in verts_in_group:
         total += vert.co
 
-    average = total / len(verts_in_group)
-    return average
+    return total / len(verts_in_group)
 
 
 def vertex_group_exists(mesh_name, bone_name):
@@ -429,7 +427,7 @@ def get_armature_list(self, context):
             name = armature.name + ' (' + name.replace('Armature (', '')[:-1] + ')'
 
         choices.append((armature.name, name, armature.name))
-    
+
     return choices
 
 
@@ -439,32 +437,30 @@ def validate_armature_selection():
         context = bpy.context
         if not context or not context.scene:
             return
-        
+
         current_armature = context.scene.armature
         available_armatures = [obj.name for obj in get_armature_objects()]
-        
+
         if not available_armatures:
             return
-        
+
         new_armature = None
-        
+
         if isinstance(current_armature, int):
             if current_armature < 0 or current_armature >= len(available_armatures):
                 new_armature = available_armatures[0]
         elif isinstance(current_armature, str):
             if current_armature not in available_armatures:
                 new_armature = available_armatures[0]
-        
+
         if new_armature:
             try:
                 context.scene.armature = new_armature
             except (AttributeError, TypeError):
                 def fix_armature_selection():
-                    try:
+                    with contextlib.suppress(Exception):
                         bpy.context.scene.armature = new_armature
-                    except Exception:
-                        pass
-                    return None
+                    return
                 bpy.app.timers.register(fix_armature_selection)
     except Exception:
         pass
@@ -545,8 +541,7 @@ def get_bones(names=None, armature_name=None, check_list=False):
             choices2.append((name, name, name))
 
     if not check_list:
-        for choice in choices:
-            choices2.append(choice)
+        choices2.extend(choices)
 
     return choices2
 
@@ -636,10 +631,8 @@ def fix_armature_names(armature_name=None):
         Translate.update_dictionary(armature.data.name)
         armature.data.name = 'Armature (' + Translate.translate(armature.data.name, add_space=True)[0] + ')'
 
-    try:
+    with contextlib.suppress(TypeError):
         bpy.context.scene.armature = armature.name
-    except TypeError:
-        pass
 
     try:
         if base_armature:
@@ -663,14 +656,14 @@ def get_meshes_objects(armature_name=None, mode=0, check=True, visible_only=Fals
             armature_name = armature.name
 
     meshes = []
-    
+
     for ob in get_objects():
             if ob is None:
                 continue
             if ob.type != 'MESH':
                 continue
-                
-            if mode == 0 or mode == 5: 
+
+            if mode == 0 or mode == 5:
                 if ob.parent:
                     if (ob.parent.type == 'ARMATURE' and ob.parent.name == armature_name) or (ob.parent.parent and ob.parent.parent.type == 'ARMATURE' and ob.parent.parent.name == armature_name):
                         meshes.append(ob)
@@ -679,12 +672,8 @@ def get_meshes_objects(armature_name=None, mode=0, check=True, visible_only=Fals
                 if not ob.parent:
                     meshes.append(ob)
 
-            elif mode == 2:
+            elif mode == 2 or (mode == 3 and ob.select_get()):
                 meshes.append(ob)
-
-            elif mode == 3:
-                if ob.select_get():
-                    meshes.append(ob)
 
     if visible_only:
         meshes = [mesh for mesh in meshes if not is_hidden(mesh)]
@@ -713,39 +702,35 @@ def get_meshes_objects(armature_name=None, mode=0, check=True, visible_only=Fals
     return meshes
 
 def get_meshes_objects_for_export(armature_name=None, mode=0, check=True):
-    context = bpy.context
     if not armature_name:
         armature = get_armature()
         if armature:
             armature_name = armature.name
 
     meshes = []
-    
+
     for ob in get_objects():
         if ob is None or ob.type != 'MESH':
             continue
-            
+
         if is_hidden(ob):
             continue
-            
-        if mode == 0 or mode == 5: 
+
+        if mode == 0 or mode == 5:
             if ob.parent:
                 if (ob.parent.type == 'ARMATURE' and ob.parent.name == armature_name) or (ob.parent.parent and ob.parent.parent.type == 'ARMATURE' and ob.parent.parent.name == armature_name):
                     meshes.append(ob)
         elif mode == 1:
             if not ob.parent:
                 meshes.append(ob)
-        elif mode == 2:
+        elif mode == 2 or (mode == 3 and ob.select_get()):
             meshes.append(ob)
-        elif mode == 3:
-            if ob.select_get():
-                meshes.append(ob)
 
     return meshes
 
 def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_shape_keys=True):
     context = bpy.context
-    
+
     if not armature_name:
         armature_name = bpy.context.scene.armature
 
@@ -771,14 +756,14 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
 
     for mesh in meshes_to_join:
         set_active(mesh)
-        
+
         for mod in list(mesh.modifiers):
             if mod.type == 'SUBSURF':
                 mesh.modifiers.remove(mod)
 
         if mesh.data.uv_layers:
             mesh.data.uv_layers[0].name = 'UVMap'
-            
+
 
     active_mesh_name = context.view_layer.objects.active.name
 
@@ -786,9 +771,9 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
         bpy.ops.object.join()
     else:
         print('NO MESH COMBINED!')
-    
+
     context = bpy.context
-    
+
 
     for mesh in get_meshes_objects(armature_name=armature_name):
         if mesh.name == active_mesh_name:
@@ -1021,9 +1006,9 @@ def save_shapekey_order(mesh_name):
     sys_props = armature.bl_system_properties_get()
     if not sys_props:
         return
-    
+
     custom_data = sys_props.get('CUSTOM')
-    
+
     if not custom_data:
         custom_data = {}
 
@@ -1052,16 +1037,16 @@ def repair_shapekey_order(mesh_name, armature_name=None):
     armature = bpy.data.objects.get(armature_name) if armature_name else get_armature()
     if not armature:
         return
-    
+
     sys_props = armature.bl_system_properties_get()
     if not sys_props:
         return
-    
+
     if 'CUSTOM' not in sys_props:
         return
-    
+
     custom_data = sys_props.get('CUSTOM', {})
-    
+
     if not isinstance(custom_data, dict):
         return
 
@@ -1269,7 +1254,7 @@ def delete_zero_weight(armature_name=None, ignore=''):
 
 def remove_unused_objects():
     default_scene_objects = []
-    
+
     for obj in get_objects():
         if obj.type in {'CAMERA', 'LAMP', 'LIGHT', 'MESH'} and is_default_object(obj):
             default_scene_objects.append(obj)
@@ -1279,17 +1264,13 @@ def remove_unused_objects():
             delete_hierarchy(obj)
 
 def is_default_object(obj):
-    if (obj.type == 'CAMERA' and obj.data.name == 'Camera') or (obj.type == 'LAMP' and obj.data.name == 'Lamp') or (obj.type == 'LIGHT' and obj.data.name == 'Light') or (obj.type == 'MESH' and obj.data.name == 'Cube'):
-        return True
-    return False
+    return bool((obj.type == 'CAMERA' and obj.data.name == 'Camera') or (obj.type == 'LAMP' and obj.data.name == 'Lamp') or (obj.type == 'LIGHT' and obj.data.name == 'Light') or (obj.type == 'MESH' and obj.data.name == 'Cube'))
 
 
 def is_end_bone(name, armature_name):
     armature = get_armature(armature_name=armature_name)
     end_bone = armature.data.edit_bones.get(name)
-    if end_bone and end_bone.parent and len(end_bone.parent.children) == 1:
-        return True
-    return False
+    return bool(end_bone and end_bone.parent and len(end_bone.parent.children) == 1)
 
 
 def correct_bone_positions(armature_name=None):
@@ -1389,7 +1370,7 @@ def show_error(scale, error_list, override_header=False):
 
     bpy.ops.cats_common.show_error('INVOKE_DEFAULT')
 
-    print('')
+    print()
     print('Report: Error')
     for line in error:
         print('    ' + line)
@@ -1404,7 +1385,7 @@ class ShowError(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        dpi_value = Common.get_user_preferences().system.dpi
+        dpi_value = get_user_preferences().system.dpi
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * dpi_scale))
 
     def draw(self, context):
@@ -1586,7 +1567,7 @@ def fix_zero_length_bones(armature: bpy.types.Object):
         if length > 0.0001:
             continue
 
-        head_rounded = [round(x, 4) for x in bone.head] 
+        head_rounded = [round(x, 4) for x in bone.head]
         tail_rounded = [round(x, 4) for x in bone.tail]
 
         if head_rounded == tail_rounded:
@@ -1601,9 +1582,8 @@ def fix_bone_orientations(armature):
 
             if dist > 0.005:
                 bone.tail = bone.children[0].head
-                if bone.parent:
-                    if len(bone.parent.children) == 1:
-                        bone.use_connect = True
+                if bone.parent and len(bone.parent.children) == 1:
+                    bone.use_connect = True
 
 
 def update_material_list(self=None, context=None):
@@ -1642,50 +1622,49 @@ def bake_mmd_colors(node_base_tex: ShaderNodeTexImage, node_mmd_shader: ShaderNo
     if not node_base_tex or not node_base_tex.image:
         principled_base_color = np.append(mmd_color, 1)
         return None, principled_base_color
-    else:
-        base_tex_image = node_base_tex.image
+    base_tex_image = node_base_tex.image
 
-        if not base_tex_image.pixels:
-            return node_base_tex, None
-
-        if base_tex_image.colorspace_settings.name == 'sRGB':
-            is_small_mask = mmd_color < 0.0031308
-            small_rgb = mmd_color[is_small_mask]
-            mmd_color[is_small_mask] = np.where(small_rgb < 0.0, 0, small_rgb * 12.92)
-
-            is_large_mask = np.invert(is_small_mask, out=is_small_mask)
-            large_rgb = mmd_color[is_large_mask]
-            mmd_color[is_large_mask] = (large_rgb ** (1.0 / 2.4)) * 1.055 - 0.055
-
-        pixels = np.empty(np.prod(base_tex_image.size) * 4, dtype=np.single)
-        base_tex_image.pixels.foreach_get(pixels)
-
-        pixels.shape = (-1, 4)
-
-        pixels[:, :3] *= np.asarray(mmd_color)
-
-        baked_image = bpy.data.images.new(base_tex_image.name + "MMDCatsBaked",
-                                          width=base_tex_image.size[0],
-                                          height=base_tex_image.size[1],
-                                          alpha=True)
-        baked_image.filepath = bpy.path.abspath("//" + base_tex_image.name + ".png")
-        baked_image.file_format = 'PNG'
-        baked_image.colorspace_settings.name = base_tex_image.colorspace_settings.name
-
-        expected_len = baked_image.size[0] * baked_image.size[1] * 4
-
-        pixels = np.empty(np.prod(base_tex_image.size) * 4, dtype=np.single)
-        base_tex_image.pixels.foreach_get(pixels)
-
-        pixels.resize(expected_len) 
-
-        print(f"Pixels length: {len(pixels)}, Expected: {expected_len}")
-        node_base_tex.image = baked_image
-
-        baked_image.pixels.foreach_set(pixels)
-        if bpy.data.is_saved:
-            node_base_tex.image.save()
+    if not base_tex_image.pixels:
         return node_base_tex, None
+
+    if base_tex_image.colorspace_settings.name == 'sRGB':
+        is_small_mask = mmd_color < 0.0031308
+        small_rgb = mmd_color[is_small_mask]
+        mmd_color[is_small_mask] = np.where(small_rgb < 0.0, 0, small_rgb * 12.92)
+
+        is_large_mask = np.invert(is_small_mask, out=is_small_mask)
+        large_rgb = mmd_color[is_large_mask]
+        mmd_color[is_large_mask] = (large_rgb ** (1.0 / 2.4)) * 1.055 - 0.055
+
+    pixels = np.empty(np.prod(base_tex_image.size) * 4, dtype=np.single)
+    base_tex_image.pixels.foreach_get(pixels)
+
+    pixels.shape = (-1, 4)
+
+    pixels[:, :3] *= np.asarray(mmd_color)
+
+    baked_image = bpy.data.images.new(base_tex_image.name + "MMDCatsBaked",
+                                      width=base_tex_image.size[0],
+                                      height=base_tex_image.size[1],
+                                      alpha=True)
+    baked_image.filepath = bpy.path.abspath("//" + base_tex_image.name + ".png")
+    baked_image.file_format = 'PNG'
+    baked_image.colorspace_settings.name = base_tex_image.colorspace_settings.name
+
+    expected_len = baked_image.size[0] * baked_image.size[1] * 4
+
+    pixels = np.empty(np.prod(base_tex_image.size) * 4, dtype=np.single)
+    base_tex_image.pixels.foreach_get(pixels)
+
+    pixels.resize(expected_len)
+
+    print(f"Pixels length: {len(pixels)}, Expected: {expected_len}")
+    node_base_tex.image = baked_image
+
+    baked_image.pixels.foreach_set(pixels)
+    if bpy.data.is_saved:
+        node_base_tex.image.save()
+    return node_base_tex, None
 
 
 def add_principled_shader(mesh: Object, bake_mmd=True):
@@ -1766,7 +1745,7 @@ def add_principled_shader(mesh: Object, bake_mmd=True):
                 elif principled_base_color is not None:
                     cats_principled_bsdf.inputs["Base Color"].default_value = principled_base_color
                 node_tree.links.new(cats_principled_bsdf.outputs["BSDF"], cats_material_output.inputs["Surface"])
-                
+
 def fix_twist_bones(mesh, bones_to_delete):
 
     for bone_type in ['Hand', 'Arm']:
@@ -1985,34 +1964,32 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
 
     current_choice_value = property_holder.get(property_name)
     is_initialised = current_choice_value is not None
-    
+
     if not is_initialised:
         return choices
-    
+
     valid_identifiers = {choice[0] for choice in choices}
-    
+
     if isinstance(current_choice_value, str):
         if current_choice_value in valid_identifiers:
             return choices
-        else:
-            try:
-                numeric_value = int(current_choice_value)
-                if numeric_value >= num_choices:
-                    _pad_enum_choices(choices, numeric_value)
-            except (ValueError, TypeError):
-                pass
-            replacement_identifier = choices[0][0]
-            _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
-            return choices
-    
+        try:
+            numeric_value = int(current_choice_value)
+            if numeric_value >= num_choices:
+                _pad_enum_choices(choices, numeric_value)
+        except (ValueError, TypeError):
+            pass
+        replacement_identifier = choices[0][0]
+        _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
+        return choices
+
     if isinstance(current_choice_value, int):
         if 0 <= current_choice_value < num_choices:
             return choices
-        else:
-            _pad_enum_choices(choices, current_choice_value)
+        _pad_enum_choices(choices, current_choice_value)
 
-            replacement_identifier = choices[0][0]
-            _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
+        replacement_identifier = choices[0][0]
+        _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
 
     return choices
 
@@ -2028,12 +2005,12 @@ def _schedule_enum_fix(property_holder, scene, property_name, property_path, new
 
     scene_name = scene.name
     scheduled_property_set = _enum_choice_fix_scheduled.setdefault(scene_name, set())
-    
+
     if property_path in scheduled_property_set:
         return
-    
+
     scheduled_property_set.add(property_path)
-    
+
     def fix_enum_task():
         scene_by_name = bpy.data.scenes.get(scene_name)
         if scene_by_name:
@@ -2041,12 +2018,10 @@ def _schedule_enum_fix(property_holder, scene, property_name, property_path, new
                 prop = scene_by_name.path_resolve(property_path, False)
                 setattr(prop.data, property_name, new_value)
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     setattr(scene_by_name, property_name, new_value)
-                except Exception:
-                    pass
         scheduled_property_set.discard(property_path)
-        return None
+        return
 
     bpy.app.timers.register(fix_enum_task, first_interval=0.0)
 
@@ -2095,18 +2070,17 @@ def wrap_dynamic_enum_items(items_func, property_name, sort=True, in_place=True,
             items = _ensure_python_references(items, property_path)
             if is_holder:
                 return _fix_out_of_bounds_enum_choices(self, context.scene, items, property_name, property_path)
-            else:
-                return items
+            return items
         finally:
             property_set.discard(property_name)
             if not property_set:
                 _enum_items_being_processed.pop(holder_id, None)
 
     return wrapped_items_func
-    
-def op_override(operator, context_override: dict[str, Any], context: Optional[bpy.types.Context] = None,
-                execution_context: Optional[str] = None,
-                undo: Optional[bool] = None, **operator_args) -> set[str]:
+
+def op_override(operator, context_override: dict[str, Any], context: bpy.types.Context | None = None,
+                execution_context: str | None = None,
+                undo: bool | None = None, **operator_args) -> set[str]:
     """Call an operator with a context override"""
     args = []
     if execution_context is not None:

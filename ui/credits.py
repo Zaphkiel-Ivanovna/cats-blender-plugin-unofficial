@@ -21,7 +21,7 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
 
         row = col.row(align=True)
         row.scale_y = 1.0
-        row.label(text=t('CreditsPanel.desc1') + globs.version_str + ')', 
+        row.label(text=t('CreditsPanel.desc1') + globs.version_str + ')',
                  icon_value=Iconloader.preview_collections["custom_icons"]["cats1"].icon_id)
 
         col.separator()
@@ -49,16 +49,16 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
         col.separator()
 
         actions_col = col.column(align=True)
-        
+
         help_row = actions_col.row(align=True)
         help_row.scale_y = 1.3
-        help_row.operator(Credits.HelpButton.bl_idname, 
+        help_row.operator(Credits.HelpButton.bl_idname,
                     icon_value=Iconloader.preview_collections["custom_icons"]["help1"].icon_id)
-        
+
         support_row = actions_col.row(align=True)
         support_row.scale_y = 1.3
         support_row.operator(Credits.SupportButton.bl_idname, icon='HEART')
-        
+
         patch_row = actions_col.row(align=True)
         patch_row.scale_y = 1.0
         patch_row.operator(Credits.PatchnotesButton.bl_idname, icon='WORDWRAP_ON')

@@ -28,9 +28,9 @@ def register():
     Scene.remove_rigidbodies_joints_global = BoolProperty(
         name=t('Scene.removerigidbodiesjointsglobal.label'),
         description=t('Scene.removerigidbodiesjointsglobal.desc'),
-        default=True  
-    )  
-         
+        default=True
+    )
+
     Scene.custom_translate_csv_export_dir = StringProperty(
         name=t('Scene.customfoldershapekeycsv.label'),
         description=t('Scene.customfoldershapekeycsv.desc'),
@@ -46,7 +46,7 @@ def register():
 
     Scene.progress_update = FloatProperty(
         name=t('Scene.progress_update.label'),
-        description=t('Scene.progress_update.desc'), 
+        description=t('Scene.progress_update.desc'),
         default=0.0,
         min=0.0,
         max=100.0,
@@ -58,7 +58,7 @@ def register():
         description=t('Scene.generate_twistbones_upper.desc'),
         default=True
     )
-    
+
     Scene.armature = EnumProperty(
         name=t('Scene.armature.label'),
         description=t('Scene.armature.desc'),
@@ -390,7 +390,7 @@ def register():
         description=t('Scene.viseme_preview_mode.desc'),
         default=False
     )
-    
+
     Scene.viseme_preview_selection = EnumProperty(
         name=t('Scene.viseme_preview_selection.label'),
         description=t('Scene.viseme_preview_selection.desc'),
@@ -413,7 +413,7 @@ def register():
         ],
         update=lambda self, context: Viseme.VisemePreview.update_preview(context)
     )
-    
+
     Scene.viseme_validate_deformation = BoolProperty(
         name=t('Scene.viseme_validate_deformation.label'),
         description=t('Scene.viseme_validate_deformation.desc'),

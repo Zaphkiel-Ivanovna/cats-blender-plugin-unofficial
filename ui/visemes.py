@@ -21,7 +21,7 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
         if mesh_count == 0:
             draw_error_box(col, t('VisemePanel.error.noMesh'))
             return
-        elif mesh_count > 1:
+        if mesh_count > 1:
             row = col.row(align=True)
             row.scale_y = 1.0
             row.prop(context.scene, 'mesh_name_viseme', icon='MESH_DATA')
@@ -38,7 +38,7 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
             row.prop(context.scene, "viseme_preview_selection", text="")
         else:
             row.operator(Viseme.VisemePreviewOperator.bl_idname, text="Preview Visemes", icon='PLAY')
-        
+
         box_col.separator()
 
         mesh_name = context.scene.mesh_name_viseme

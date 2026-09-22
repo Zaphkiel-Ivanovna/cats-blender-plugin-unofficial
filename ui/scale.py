@@ -20,13 +20,13 @@ _imscale_cache_timestamp = 0
 def check_for_imscale(force_refresh=False):
     global draw_imscale_ui, old_imscale_version, imscale_is_disabled
     global _imscale_check_cache, _imscale_cache_timestamp
-    
+
     import time
     current_time = time.time()
-    
+
     if not force_refresh and _imscale_check_cache is not None and (current_time - _imscale_cache_timestamp) < 300:
         return
-    
+
     try:
         draw_imscale_ui = None
 
@@ -50,10 +50,10 @@ def check_for_imscale(force_refresh=False):
                 imscale_is_disabled = False
                 draw_imscale_ui = import_module(mod.__name__ + '.ui').draw_ui
                 break
-            
+
         _imscale_check_cache = True
         _imscale_cache_timestamp = current_time
-        
+
     except Exception as e:
         print(f"Error checking for Immersive Scaler: {e}")
         draw_imscale_ui = None
@@ -85,7 +85,7 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
                 return draw_imscale_ui(context, layout)
 
             check_for_imscale()
-            
+
         except Exception as e:
             draw_error_box(col, ["Error loading scaling panel", str(e)])
 
@@ -94,9 +94,9 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
             t('ScalingPanel.imscaleDisabled1'),
             t('ScalingPanel.imscaleDisabled2')
         ])
-        
+
         col.separator()
-        
+
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Scaler.EnableIMScale.bl_idname, icon='CHECKBOX_HLT')
@@ -106,9 +106,9 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
             t('ScalingPanel.imscaleOldVersion1'),
             t('ScalingPanel.imscaleNotInstalled2')
         ])
-        
+
         col.separator()
-        
+
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Scaler.ImmersiveScalerButton.bl_idname, icon='CHECKBOX_HLT')
@@ -118,9 +118,9 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
             t('ScalingPanel.imscaleNotInstalled1'),
             t('ScalingPanel.imscaleNotInstalled2')
         ])
-        
+
         col.separator()
-        
+
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Scaler.ImmersiveScalerButton.bl_idname, icon='CHECKBOX_HLT')
