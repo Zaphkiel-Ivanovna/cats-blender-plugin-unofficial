@@ -43,7 +43,7 @@ package_name = __package__
 
 ICON_URL = 'URL'
 
-RELEASES_API_URL = 'https://git.disroot.org/api/v1/repos/Neoneko/Cats-Blender-Plugin/releases'
+RELEASES_API_URL = 'https://api.github.com/repos/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/releases'
 REQUEST_TIMEOUT = 15
 
 
@@ -388,7 +388,7 @@ def check_for_update():
     print('Checking for Cats update...')
 
     try:
-        if not get_github_releases('teamneoneko'):
+        if not get_github_releases():
             _check_error = t('check_for_update.cantCheck')
             return
 
@@ -412,7 +412,7 @@ def _poll_update_check():
     return None
 
 
-def get_github_releases(repo):
+def get_github_releases():
     global version_list
     version_list = OrderedDict()
 
@@ -437,7 +437,7 @@ def get_github_releases(repo):
     except (requests.RequestException, ValueError) as e:
         print('URL ERROR:', e)
         return False
-    if not data:
+    if not isinstance(data, list):
         return False
     
     tag_prefix = f"{BLENDER_VERSION[0]}.{BLENDER_VERSION[1]}."
@@ -447,10 +447,21 @@ def get_github_releases(repo):
         if not full_tag or not full_tag.startswith(tag_prefix):
             continue
 
+        if version.get('draft') or version.get('prerelease'):
+            continue
+
+        download_url = next(
+            (asset['browser_download_url'] for asset in version.get('assets') or []
+             if str(asset.get('browser_download_url', '')).endswith('.zip')),
+            version.get('zipball_url'),
+        )
+        if not download_url:
+            continue
+
         version_list[full_tag] = [
-            version['zipball_url'],
-            version['body'],
-            version['published_at'].split('T')[0]
+            download_url,
+            version.get('body') or '',
+            (version.get('published_at') or '').split('T')[0]
         ]
 
     return True
@@ -509,8 +520,8 @@ def update_now(version=None, latest=False, dev=False):
         return
     if dev:
         print('UPDATE TO DEVELOPMENT')
-        major_version = CATS_VERSION.split('.')[0]
-        update_link = f'https://git.disroot.org/Neoneko/Cats-Blender-Plugin/archive/blender-{major_version}x-dev.zip'
+        update_link = ('https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial'
+                       '/archive/refs/heads/main.zip')
     elif latest or not version:
         print('UPDATE TO ' + latest_version_str)
         update_link = version_list.get(latest_version_str)[0]
