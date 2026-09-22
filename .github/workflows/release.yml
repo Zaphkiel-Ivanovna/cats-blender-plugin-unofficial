@@ -92,10 +92,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          series="${TAG%.*.*}"
+          supported=$(python3 - <<'PY'
+          import tomllib
+
+          with open("blender_manifest.toml", "rb") as handle:
+              manifest = tomllib.load(handle)
+
+          def parts(value):
+              return tuple(int(piece) for piece in value.split("."))
+
+          low, high = parts(manifest["blender_version_min"]), parts(manifest["blender_version_max"])
+          names = [f"{low[0]}.{minor}" for minor in range(low[1], high[1])] if low[0] == high[0] else []
+
+          if not names:
+              print(f"{low[0]}.{low[1]} or newer, below {high[0]}.{high[1]}")
+          elif len(names) == 1:
+              print(names[0])
+          else:
+              print(", ".join(names[:-1]) + " and " + names[-1])
+          PY
+          )
           notes=$(mktemp)
           {
-            echo "Built for Blender ${series}.x."
+            echo "Works with Blender ${supported}."
             echo
             echo "Install through **Edit > Preferences > Get Extensions**, the dropdown at the top right, then **Install from Disk**."
           } > "$notes"
