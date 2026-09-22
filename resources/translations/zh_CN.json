@@ -1,13 +1,13 @@
 {
     "localeCode": "zh_CN",
     "authors": [],
-    "messages":{
+    "messages": {
         "Main.error.restartAdmin": "\n\n检测到 CATS 安装存在问题！\n请以管理员身份重启 Blender 以修复！\n",
         "Main.error.deleteFollowing": "\n\n检测到 CATS 安装存在问题！\n请删除插件文件夹中的以下文件和文件夹以修复：\n",
         "Main.error.installViaPreferences": "\n\n检测到 CATS 安装存在问题！\n请通过用户设置安装 CATS 并重启 Blender！\n",
         "Main.error.restartAndEnable": "\n\nCATS 安装问题已修复！\n请重启 Blender 并启用 CATS！\n",
-        "Main.error.29unsupportedVersion": "\n\nBlender 4.2 以下版本不受 CATS 支持。\n请使用 Blender 4.2 或更高版本。\n",
-        "Main.error.40unsupportedVersion": "\n\n当前 Blender 版本不受此版本 CATS 支持。\n请使用 Blender 4.4，可从 GitHub 下载。\n",
+        "Main.error.29unsupportedVersion": "\n\nBlender 5.0 以下版本不受 CATS 支持。\n请使用 Blender 5.0 或 5.1。\n",
+        "Main.error.40unsupportedVersion": "\n\n当前 Blender 版本不受此版本 CATS 支持。\n请使用 Blender 5.0 或 5.1，可从 GitHub 下载。\n",
         "Main.error.restartAndEnable_alt": "\n\n请重启 Blender 并启用 CATS！\n",
         "ToolPanel.label": "Cats Blender 插件",
         "ToolPanel.category": "CATS",

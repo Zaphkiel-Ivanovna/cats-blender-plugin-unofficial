@@ -11,6 +11,7 @@ permissions = ["files", "network"]
 website = "https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-"
 tags = ["3D View", "Modeling", "Mesh", "Object"]
 blender_version_min = "5.0.0"
+blender_version_max = "5.2.0"
 license = [
   "SPDX:MIT",
 ]

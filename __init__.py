@@ -49,7 +49,7 @@ def check_unsupported_blender_versions():
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.29unsupportedVersion'))
 
-    if bpy.app.version >= (5, 1):
+    if bpy.app.version >= (5, 2):
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.40unsupportedVersion'))
 

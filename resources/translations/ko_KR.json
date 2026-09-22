@@ -1,13 +1,13 @@
 {
     "localeCode": "ko_KR",
     "authors": [],
-    "messages":{
+    "messages": {
         "Main.error.restartAdmin": "\n\nCATS 설치에 문제가 발견되었습니다!\n해결하려면 관리자 권한으로 Blender를 재시작하세요!\n",
         "Main.error.deleteFollowing": "\n\nCATS 설치에 문제가 발견되었습니다!\n해결하려면 애드온 폴더에서 다음 파일과 폴더를 삭제하세요:\n",
         "Main.error.installViaPreferences": "\n\nCATS 설치에 문제가 발견되었습니다!\n사용자 설정에서 CATS를 설치하고 Blender를 재시작하세요!\n",
         "Main.error.restartAndEnable": "\n\nCATS 설치 문제가 해결되었습니다!\nBlender를 재시작하고 CATS를 활성화하세요!\n",
-        "Main.error.29unsupportedVersion": "\n\nBlender 5.0 이전 버전은 CATS에서 지원되지 않습니다.\nBlender 5.0 이상을 사용해주세요.\n",
-        "Main.error.40unsupportedVersion": "\n\n이 Blender 버전은 현재 CATS 버전에서 지원되지 않습니다.\nBlender 5.0을 사용해주세요. 5.0 버전은 GitHub에서 다운로드할 수 있습니다.\n",
+        "Main.error.29unsupportedVersion": "\n\nBlender 5.0 이전 버전은 CATS에서 지원되지 않습니다.\nBlender 5.0 또는 5.1을 사용해주세요.\n",
+        "Main.error.40unsupportedVersion": "\n\n이 Blender 버전은 현재 CATS 버전에서 지원되지 않습니다.\nBlender 5.0 또는 5.1을 사용해주세요. GitHub에서 다운로드할 수 있습니다.\n",
         "Main.error.restartAndEnable_alt": "\n\nBlender를 재시작하고 CATS를 활성화하세요!\n",
         "ToolPanel.label": "Cats Blender 플러그인",
         "ToolPanel.category": "CATS",
@@ -258,7 +258,7 @@
         "JoinMeshes.error.not_single_user": "개체/메시가 단일 사용자가 아닙니다.",
         "JoinMeshes.error.make_single_user": "이 옵션을 사용하기 전에 이 작업을 수행하십시오",
         "JoinMeshes.error.make_single_user1": "모든 Objest / Mehses를 선택한 다음 다음을 수행하십시오.",
-        "JoinMeshes.error.make_single_user2": "객체 > 관계 > 단일 사용자 만들기",  
+        "JoinMeshes.error.make_single_user2": "객체 > 관계 > 단일 사용자 만들기",
         "SeparateByMaterials.label": "매테리얼별로 분리하기",
         "SeparateByMaterials.desc": "선택된 메쉬를 매테리얼 별로 나눕니다.\n\n경고: 나중에 쉐이프키가 필요한 것들은 절대 데시메이트하지 마십시오. (얼굴, 입, 눈 등..)",
         "SeparateByMaterials.success": "성공적으로 매테리얼별로 분리됐습니다.",
