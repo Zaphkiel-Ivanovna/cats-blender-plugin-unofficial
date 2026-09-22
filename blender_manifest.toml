@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "cats_blender_plugin"
-version = "1.0.0"
+version = "1.0.1"
 name = "Unoffical Cats Blender Plugin"
 tagline = "Shortens the steps to import and optimize models for VRChat"
 maintainer = "Zaphkiel-Ivanovna <59056390+Zaphkiel-Ivanovna@users.noreply.github.com>"
