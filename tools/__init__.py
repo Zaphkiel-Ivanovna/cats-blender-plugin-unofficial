@@ -1,6 +1,6 @@
 # MIT License
 
-if "bpy" not in locals():
+if "register" not in locals():
     from . import register
     from . import armature
     from . import armature_bones

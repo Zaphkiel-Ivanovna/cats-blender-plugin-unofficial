@@ -1,6 +1,6 @@
 # MIT License
 
-if "bpy" not in locals():
+if "main" not in locals():
     from . import main
     from . import quickaccess
     from . import optimization

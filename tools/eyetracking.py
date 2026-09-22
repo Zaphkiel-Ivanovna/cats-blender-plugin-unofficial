@@ -570,11 +570,11 @@ def repair_shapekeys(mesh_name, vertex_group):
     print('DEBUG: Repairing shapes!')
     moved = False
     i = 0
-    for key in bm.verts.layers.shape:
+    for value in bm.verts.layers.shape:
+        key = value.name
         if not key.startswith('vrc.'):
             continue
         print('DEBUG: Repairing shape: ' + key)
-        value = bm.verts.layers.shape.get(key)
         for index, vert in enumerate(bm.verts):
             if vert.co.xyz == vcoords:
                 if index < i:
@@ -617,10 +617,9 @@ def repair_shapekeys_mouth(mesh_name):
     bm.verts.ensure_lookup_table()
 
     moved = False
-    for key in bm.verts.layers.shape:
-        if not key.startswith('vrc'):
+    for value in bm.verts.layers.shape:
+        if not value.name.startswith('vrc'):
             continue
-        value = bm.verts.layers.shape.get(key)
         for vert in bm.verts:
             shapekey = vert
             shapekey_coords = mesh.matrix_world @ shapekey[value]
