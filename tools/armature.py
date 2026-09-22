@@ -1,6 +1,7 @@
 # MIT License
 
 import bpy
+import numpy as np
 import copy
 import math
 import platform
@@ -114,9 +115,9 @@ class ArmatureValidator:
             
             uv_issues = 0
             for uv_layer in mesh.data.uv_layers:
-                for vert_idx in range(len(uv_layer.data)):
-                    if math.isnan(uv_layer.data[vert_idx].uv.x) or math.isnan(uv_layer.data[vert_idx].uv.y):
-                        uv_issues += 1
+                uvs = np.empty(len(uv_layer.data) * 2, dtype=np.float32)
+                uv_layer.data.foreach_get('uv', uvs)
+                uv_issues += int(np.isnan(uvs.reshape(-1, 2)).any(axis=1).sum())
             
             if uv_issues > 0:
                 warnings.append(f"Mesh '{mesh.name}' has {uv_issues} faulty UV coordinates that will be fixed")
