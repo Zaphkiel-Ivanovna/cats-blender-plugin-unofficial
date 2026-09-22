@@ -22,12 +22,11 @@ from .register import register_wrap
 from .translations import t
 from mmd_tools_local.translations import DictionaryEnum
 import contextlib
+from importlib.util import find_spec
 
 current_blender_version = str(bpy.app.version[:2])[1:-1].replace(', ', '.')
 
-mmd_tools_local_installed = False
-with contextlib.suppress(Exception):
-    mmd_tools_local_installed = True
+mmd_tools_local_installed = find_spec("mmd_tools_local") is not None
 
 formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.zip'
 format_list = formats.replace('*.', '').split(';')

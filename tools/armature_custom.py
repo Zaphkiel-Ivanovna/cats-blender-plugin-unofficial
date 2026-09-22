@@ -332,7 +332,7 @@ def validate_parents_and_transforms(merge_armature: bpy.types.Object, base_armat
 
 def is_transform_clean(obj: bpy.types.Object) -> bool:
     """Check if an object's transforms are at default values."""
-    return all(not (obj.scale[i] != 1 or obj.location[i] != 0 or obj.rotation_euler[i] != 0) for i in range(3))
+    return all(obj.scale[i] == 1 and obj.location[i] == 0 and obj.rotation_euler[i] == 0 for i in range(3))
 
 
 def attach_mesh_to_armature(mesh: bpy.types.Object, armature: bpy.types.Object, attach_bone_name: str):

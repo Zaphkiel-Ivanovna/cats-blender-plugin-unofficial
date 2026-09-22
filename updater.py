@@ -104,7 +104,7 @@ class UpdateToSelectedButton(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return not (is_checking_for_update or not version_list)
+        return not is_checking_for_update and bool(version_list)
 
     def execute(self, context):
         global confirm_update_to, used_updater_panel
@@ -163,7 +163,7 @@ class ShowPatchnotesPanel(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return not (is_checking_for_update or not version_list)
+        return not is_checking_for_update and bool(version_list)
 
     def execute(self, context):
         return {'FINISHED'}

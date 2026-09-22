@@ -152,35 +152,6 @@ class EyeTrackingValidator:
         return eye_bones
 
 
-class VertexGroupCache:
-    _cache = {}
-
-    @classmethod
-    def get_vertex_indices(cls, mesh_name: str, group_name: str) -> set | None:
-        cache_key = f"{mesh_name}_{group_name}"
-
-        if cache_key in cls._cache:
-            return cls._cache[cache_key]
-
-        mesh = Common.get_objects().get(mesh_name)
-        if not mesh:
-            return None
-
-        group = mesh.vertex_groups.get(group_name)
-        if not group:
-            return None
-
-        indices = {v.index for v in mesh.data.vertices
-                  if any(g.group == group.index for g in v.groups)}
-
-        cls._cache[cache_key] = indices
-        return indices
-
-    @classmethod
-    def clear_cache(cls):
-        cls._cache.clear()
-
-
 @register_wrap
 class RotateEyeBonesForAv3Button(bpy.types.Operator):
     """Reorient eye bones to point straight up and have zero roll. This isn't necessary for VRChat because eye-tracking
@@ -336,9 +307,6 @@ class CreateEyesButton(bpy.types.Operator):
                     self.report({'ERROR'}, t('CreateEyesButton.error.noShapeSelected'))
                     return {'CANCELLED'}
 
-            VertexGroupCache.clear_cache()
-            VertexGroupCache.get_vertex_indices(mesh_name, 'LeftEye')
-            VertexGroupCache.get_vertex_indices(mesh_name, 'RightEye')
             wm.progress_update(30)
             context.scene.progress_update = 30
 

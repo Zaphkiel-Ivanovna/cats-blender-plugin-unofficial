@@ -4,7 +4,6 @@ import bpy
 from . import common as Common
 from .register import register_wrap
 from .translations import t
-mmd_tools_local_installed = True
 
 @register_wrap
 class CombineMaterialsButton(bpy.types.Operator):

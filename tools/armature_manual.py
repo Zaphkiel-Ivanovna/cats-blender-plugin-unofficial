@@ -1365,8 +1365,6 @@ class FixVRMShapesButton(bpy.types.Operator):
         Common.set_active(mesh)
         bpy.ops.object.shape_key_clear()
 
-        enumerate(mesh.data.shape_keys.key_blocks)
-
         shapekeys_to_merge_eyes = {}
         shapekeys_to_merge_mouth = {}
         for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):

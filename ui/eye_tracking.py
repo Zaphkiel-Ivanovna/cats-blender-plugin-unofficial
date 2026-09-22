@@ -269,7 +269,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_no_meshes_warning(self, col):
         col.separator()
-        col.column(align=True)
         row = col.row(align=True)
         row.scale_y = 1.1
         row.label(text=t('EyeTrackingPanel.error.noMesh'), icon='ERROR')

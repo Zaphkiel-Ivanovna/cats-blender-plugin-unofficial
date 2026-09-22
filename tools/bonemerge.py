@@ -21,8 +21,6 @@ class LoadBonesButton(bpy.types.Operator):
         return Common.get_armature() is not None
 
     def execute(self, context):
-        Common.get_armature()
-
         globs.root_bones_choices = {}
         choices = get_parent_root_bones(self, context)
 
