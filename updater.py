@@ -17,6 +17,9 @@ fake_update = False
 
 is_checking_for_update = False
 checked_on_startup = False
+# Handoff from the update-check worker thread to the main-thread poll timer
+_check_finished = False
+_check_error = ''
 version_list = None
 current_version = []
 current_version_str = ''
@@ -46,6 +49,9 @@ ICON_URL = 'URL'
 
 RELEASES_API_URL = 'https://git.disroot.org/api/v1/repos/Neoneko/Cats-Blender-Plugin/releases'
 REQUEST_TIMEOUT = 15
+
+# Read once here, on the main thread, so the update-check worker touches no bpy at all
+BLENDER_VERSION = tuple(bpy.app.version)
 
 class CheckForUpdateButton(bpy.types.Operator):
     bl_idname = 'cats_updater.check_for_update'
@@ -351,7 +357,7 @@ class UpdateNotificationPopup(bpy.types.Operator):
 
 
 def check_for_update_background(check_on_startup=False):
-    global is_checking_for_update, checked_on_startup
+    global is_checking_for_update, checked_on_startup, _check_finished, _check_error
     if check_on_startup and checked_on_startup:
         # print('ALREADY CHECKED ON STARTUP')
         return
@@ -366,34 +372,56 @@ def check_for_update_background(check_on_startup=False):
         return
 
     is_checking_for_update = True
+    _check_finished = False
+    _check_error = ''
 
-    thread = Thread(target=check_for_update, args=[])
+    # Register the poll timer here, on the main thread. BLI_timer_register appends to
+    # a global list with no lock, so bpy.app.timers.register is not safe to call from
+    # the worker either.
+    bpy.app.timers.register(_poll_update_check, first_interval=0.2)
+
+    thread = Thread(target=check_for_update, args=[], daemon=True)
     thread.start()
 
 
 def check_for_update():
+    """Runs on a worker thread, so it must not touch bpy at all.
+
+    None of Blender's Python API is thread safe, and its own docs say Python
+    threads are unsupported. This does network I/O and writes plain module
+    globals; every bpy call belongs to _poll_update_check on the main thread.
+    """
+    global update_needed, is_ignored_version, _check_finished, _check_error
     print('Checking for Cats update...')
 
-    # Get all releases from Github
-    if not get_github_releases('teamneoneko'):
-        finish_update_checking(error=t('check_for_update.cantCheck'))
-        return
+    try:
+        # Get all releases from Github
+        if not get_github_releases('teamneoneko'):
+            _check_error = t('check_for_update.cantCheck')
+            return
 
-    # Check if an update is needed
-    global update_needed, is_ignored_version
-    update_needed = check_for_update_available()
-    is_ignored_version = check_ignored_version()
+        # Check if an update is needed
+        update_needed = check_for_update_available()
+        is_ignored_version = check_ignored_version()
+        print('Update found!' if update_needed else 'No update found.')
+    finally:
+        # Assigning a module global is atomic under the GIL, which is all the
+        # handoff to the main thread needs.
+        _check_finished = True
 
-    # Update needed, show the notification popup if it wasn't checked through the UI
-    if update_needed:
-        print('Update found!')
-        if not used_updater_panel and not is_ignored_version:
-            prepare_to_show_update_notification()
-    else:
-        print('No update found.')
 
-    # Finish update checking, update the UI
-    finish_update_checking()
+def _poll_update_check():
+    """Main-thread timer that picks up the worker's result and does the bpy work."""
+    if not _check_finished:
+        return 0.2
+
+    finish_update_checking(error=_check_error)
+
+    # Show the notification popup if the check wasn't started from the UI
+    if update_needed and not used_updater_panel and not is_ignored_version:
+        show_update_notification()
+
+    return None
 
 
 def get_github_releases(repo):
@@ -426,7 +454,7 @@ def get_github_releases(repo):
     
     # Determine tag prefix based on Blender version
     tag_prefix = ""
-    if bpy.app.version >= (5, 0) and bpy.app.version < (5, 1):
+    if (5, 0) <= BLENDER_VERSION < (5, 1):
         tag_prefix = "5.0."
 
     for version in data:
@@ -495,31 +523,17 @@ def finish_update_checking(error=''):
     ui_refresh()
 
 
-def _tag_areas_for_redraw():
+def ui_refresh():
+    # Every caller is on the main thread; tag_redraw touches window data.
     for window_manager in bpy.data.window_managers:
         for window in window_manager.windows:
             for area in window.screen.areas:
                 area.tag_redraw()
-    return None
-
-
-def ui_refresh():
-    # tag_redraw touches window data, so it has to run on the main thread.
-    # bpy.app.timers.register is the one bpy call that is safe from a worker thread.
-    bpy.app.timers.register(_tag_areas_for_redraw)
-
-
-def prepare_to_show_update_notification():
-    # Called from the update-check thread. bpy.app.timers.register is safe to call
-    # from any thread and runs the callback on the main thread, which is the only
-    # place a popup operator can be invoked from.
-    bpy.app.timers.register(show_update_notification, first_interval=0.1)
 
 
 def show_update_notification():
     atr = UpdateNotificationPopup.bl_idname.split(".")
     getattr(getattr(bpy.ops, atr[0]), atr[1])('INVOKE_DEFAULT')
-    return None
 
 
 def update_now(version=None, latest=False, dev=False):
