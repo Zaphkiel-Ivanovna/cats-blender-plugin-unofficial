@@ -1,10 +1,8 @@
 # GPL License
 
-import os
 import bpy
 import json
 import copy
-import pathlib
 import collections
 from datetime import datetime, timezone
 from collections import OrderedDict
@@ -16,9 +14,8 @@ from ..extern_tools.google_trans_new.google_trans_new import google_translator
 from . import translate as Translate
 from .translations import t
 
-main_dir = pathlib.Path(os.path.dirname(__file__)).parent.resolve()
-resources_dir = os.path.join(str(main_dir), "resources")
-settings_file = os.path.join(resources_dir, "settings.json")
+def get_settings_file():
+    return globs.user_data_path("settings.json")
 
 settings_data = None
 settings_data_unchanged = None
@@ -92,7 +89,7 @@ def load_settings():
     global settings_data, settings_data_unchanged
 
     try:
-        with open(settings_file, encoding="utf8") as file:
+        with open(get_settings_file(), encoding="utf8") as file:
             settings_data = json.load(file, object_pairs_hook=collections.OrderedDict)
     except FileNotFoundError:
         print("SETTINGS FILE NOT FOUND!")
@@ -142,8 +139,11 @@ def load_settings():
     settings_data_unchanged = copy.deepcopy(settings_data)
 
 def save_settings():
-    with open(settings_file, 'w', encoding="utf8") as outfile:
-        json.dump(settings_data, outfile, ensure_ascii=False, indent=4)
+    try:
+        with open(get_settings_file(), 'w', encoding="utf8") as outfile:
+            json.dump(settings_data, outfile, ensure_ascii=False, indent=4)
+    except OSError as e:
+        print('COULD NOT SAVE SETTINGS:', e)
 
 def reset_settings(full_reset=False, to_reset_settings=None):
     if not to_reset_settings:

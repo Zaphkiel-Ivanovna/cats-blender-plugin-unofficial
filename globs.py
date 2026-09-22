@@ -1,6 +1,41 @@
 # MIT License
 
+import os
+
 import bpy
+
+_RESOURCES_DIR = os.path.join(os.path.dirname(__file__), 'resources')
+
+
+def resource_path(*subpaths):
+    """Path to a read-only file shipped inside the add-on."""
+    return os.path.join(_RESOURCES_DIR, *subpaths)
+
+
+def user_data_path(*subpaths, create=True):
+    """Path under the per-user data directory.
+
+    Blender replaces the extension directory wholesale on every update and mounts
+    it read-only for system repositories, so writable state cannot live in there.
+    extension_path_user is the API added in 4.2 for exactly this.
+    """
+    try:
+        base = bpy.utils.extension_path_user(__package__, create=create)
+    except (AttributeError, ValueError):
+        # Not installed as an extension, e.g. a symlinked development checkout
+        base = bpy.utils.user_resource('CONFIG', path='cats_blender_plugin', create=create)
+
+    path = os.path.join(base, *subpaths)
+    if create and subpaths:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
+def user_data_dir(*subpaths):
+    """Directory under the per-user data directory, created if it is missing."""
+    path = user_data_path(*subpaths)
+    os.makedirs(path, exist_ok=True)
+    return path
 
 # for bone root parenting
 root_bones = {}

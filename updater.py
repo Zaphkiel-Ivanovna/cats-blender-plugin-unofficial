@@ -3,13 +3,13 @@
 import os
 import bpy
 import shutil
-import pathlib
 import zipfile
 import requests
 from threading import Thread
 from collections import OrderedDict
 from .tools.translations import t
 from .tools.common import wrap_dynamic_enum_items
+from . import globs
 from . import CATS_VERSION, dev_branch
 
 no_ver_check = False
@@ -33,10 +33,10 @@ confirm_update_to = ''
 show_error = ''
 
 main_dir = os.path.dirname(__file__)
-downloads_dir = os.path.join(main_dir, "downloads")
-resources_dir = os.path.join(main_dir, "resources")
-ignore_ver_file = os.path.join(resources_dir, "ignore_version.txt")
-no_auto_ver_check_file = os.path.join(resources_dir, "no_auto_ver_check.txt")
+# These survive add-on updates, so they live outside the extension directory
+downloads_dir = globs.user_data_path("downloads")
+ignore_ver_file = globs.user_data_path("ignore_version.txt")
+no_auto_ver_check_file = globs.user_data_path("no_auto_ver_check.txt")
 
 # Package name of this add-on, used as the AddonPreferences bl_idname
 package_name = __package__
@@ -552,7 +552,7 @@ def download_file(update_url):
         shutil.rmtree(downloads_dir)
 
     # Create download folder
-    pathlib.Path(downloads_dir).mkdir(exist_ok=True)
+    os.makedirs(downloads_dir, exist_ok=True)
 
     # Download zip
     print('DOWNLOAD FILE')
@@ -684,14 +684,13 @@ def clean_addon_dir():
         except OSError:
             print("Failed to pre-remove folder " + folder)
 
-    # then remove resource files and folders (except settings and google dict)
+    # then remove the bundled resource files and folders. Settings and the google
+    # dictionary are no longer in here, they live under the user data directory.
     resources_folder = os.path.join(main_dir, 'resources')
     files = [f for f in os.listdir(resources_folder) if os.path.isfile(os.path.join(resources_folder, f))]
     folders = [f for f in os.listdir(resources_folder) if os.path.isdir(os.path.join(resources_folder, f))]
 
     for f in files:
-        if f == 'settings.json' or f == 'dictionary_google.json':
-            continue
         file = os.path.join(resources_folder, f)
         try:
             os.remove(file)
@@ -709,10 +708,7 @@ def clean_addon_dir():
 
 
 def set_ignored_version():
-    # Create resources folder
-    pathlib.Path(resources_dir).mkdir(exist_ok=True)
-
-    # Create ignore file
+    # Create ignore file, user_data_path() already made the folder
     with open(ignore_ver_file, 'w', encoding="utf8") as outfile:
         outfile.write(latest_version_str)
 

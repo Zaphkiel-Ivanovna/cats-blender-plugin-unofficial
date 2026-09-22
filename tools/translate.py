@@ -5,7 +5,6 @@ import os
 import bpy
 import copy
 import json
-import pathlib
 import traceback
 import collections
 import requests.exceptions
@@ -15,7 +14,6 @@ from datetime import datetime, timezone
 from collections import OrderedDict
 
 from . import common as Common
-from pathlib import Path
 from .register import register_wrap
 from .. import globs
 # from ..googletrans import Translator  # TODO Remove this
@@ -27,10 +25,14 @@ from mmd_tools_local import translations as mmd_translations
 dictionary = {}
 dictionary_google = {}
 
-main_dir = pathlib.Path(os.path.dirname(__file__)).parent.resolve()
-resources_dir = os.path.join(str(main_dir), "resources")
-dictionary_file = os.path.join(resources_dir, "dictionary.json")
-dictionary_google_file = os.path.join(resources_dir, "dictionary_google.json")
+def get_dictionary_file():
+    """The downloaded dictionary if there is one, otherwise the bundled copy."""
+    downloaded = globs.user_data_path("dictionary.json")
+    return downloaded if os.path.isfile(downloaded) else globs.resource_path("dictionary.json")
+
+
+def get_dictionary_google_file():
+    return globs.user_data_path("dictionary_google.json")
 
 def get_cats_dir(context):
     prefs = context.preferences.addons["cats-blender-plugin"].preferences
@@ -511,7 +513,7 @@ def load_translations():
 
     # Load internal dictionary
     try:
-        with open(dictionary_file, encoding="utf8") as file:
+        with open(get_dictionary_file(), encoding="utf8") as file:
             temp_dict = json.load(file, object_pairs_hook=collections.OrderedDict)
             dict_found = True
             # print('DICTIONARY LOADED!')
@@ -524,7 +526,7 @@ def load_translations():
 
     # Load local google dictionary and add it to the temp dict
     try:
-        with open(dictionary_google_file, encoding="utf8") as file:
+        with open(get_dictionary_google_file(), encoding="utf8") as file:
             global dictionary_google
             dictionary_google = json.load(file, object_pairs_hook=collections.OrderedDict)
 
@@ -779,7 +781,7 @@ def reset_google_dict():
 
 
 def save_google_dict():
-    with open(dictionary_google_file, 'w', encoding="utf8") as outfile:
+    with open(get_dictionary_google_file(), 'w', encoding="utf8") as outfile:
         json.dump(dictionary_google, outfile, ensure_ascii=False, indent=4)
 
 
