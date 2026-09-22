@@ -16,7 +16,7 @@ dictionary: dict[str, str] = dict()
 languages = []
 verbose = True
 last_loaded_language = None
-dictionary_download_link = "https://raw.githubusercontent.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/4.3-translations/dictionary.json"
+dictionary_download_link = "https://raw.githubusercontent.com/teamneoneko/Cats-Blender-Plugin-Unofficial-translations/5x-translations/dictionary.json"
 _addon_startup_time = None
 
 REQUEST_TIMEOUT = 15
