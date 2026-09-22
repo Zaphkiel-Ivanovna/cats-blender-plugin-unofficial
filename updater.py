@@ -1,14 +1,11 @@
 # MIT License
 
 import os
-import ssl
 import bpy
-import time
-import json
-import urllib
 import shutil
 import pathlib
 import zipfile
+import requests
 import addon_utils
 from threading import Thread
 from collections import OrderedDict
@@ -51,6 +48,9 @@ for mod in addon_utils.modules():
 
 # Icons for UI
 ICON_URL = 'URL'
+
+RELEASES_API_URL = 'https://git.disroot.org/api/v1/repos/Neoneko/Cats-Blender-Plugin/releases'
+REQUEST_TIMEOUT = 15
 
 class CheckForUpdateButton(bpy.types.Operator):
     bl_idname = 'cats_updater.check_for_update'
@@ -420,11 +420,11 @@ def get_github_releases(repo):
         return True
 
     try:
-        ssl._create_default_https_context = ssl._create_unverified_context
-        with urllib.request.urlopen('https://git.disroot.org/api/v1/repos/Neoneko/Cats-Blender-Plugin/releases') as url:
-            data = json.loads(url.read().decode())
-    except urllib.error.URLError:
-        print('URL ERROR')
+        response = requests.get(RELEASES_API_URL, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError) as e:
+        print('URL ERROR:', e)
         return False
     if not data:
         return False
@@ -573,10 +573,13 @@ def download_file(update_url):
     # Download zip
     print('DOWNLOAD FILE')
     try:
-        ssl._create_default_https_context = ssl._create_unverified_context
-        urllib.request.urlretrieve(update_url, update_zip_file)
-    except urllib.error.URLError:
-        print("FILE COULD NOT BE DOWNLOADED")
+        with requests.get(update_url, timeout=REQUEST_TIMEOUT, stream=True) as response:
+            response.raise_for_status()
+            with open(update_zip_file, 'wb') as zip_out:
+                for chunk in response.iter_content(chunk_size=65536):
+                    zip_out.write(chunk)
+    except requests.RequestException as e:
+        print("FILE COULD NOT BE DOWNLOADED:", e)
         shutil.rmtree(downloads_dir)
         finish_update(error=t('download_file.cantConnect'))
         return
