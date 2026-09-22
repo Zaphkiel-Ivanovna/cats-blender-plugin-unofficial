@@ -7,17 +7,7 @@ __bl_classes = []
 __bl_ordered_classes = []
 
 
-def _dummy_operator_poll_message_set(message, *args):
-    """Operator.poll_message_set was added in Blender 3.0. We add this function to Operator subclasses when it's not
-    present so that code that wants to use poll_message_set won't cause errors on older Blender versions"""
-    pass
-
-
 def register_wrap(cls):
-    if issubclass(cls, bpy.types.Operator) and not hasattr(cls, "poll_message_set"):
-        # poll_message_set was added in Blender 3.0. To be able to use it on 3.0+, without causing errors on older
-        # Blender versions, we need to add a dummy function under the same attribute name to the class.
-        cls.poll_message_set = _dummy_operator_poll_message_set
     if hasattr(cls, 'bl_rna'):
         __bl_classes.append(cls)
     cls = make_annotations(cls)
@@ -36,28 +26,31 @@ def make_annotations(cls):
     return cls
 
 
+def get_ordered_classes():
+    return __bl_ordered_classes
+
+
 def order_classes():
     global __bl_ordered_classes
-    deps_dict = {}
-    classes_to_register = set(iter_classes_to_register())
-    for cls in classes_to_register:
-        deps_dict[cls] = set(iter_own_register_deps(cls, classes_to_register))
+    classes_to_register = set(__bl_classes)
+    # Keep __bl_classes' order so the result is stable between runs
+    deps_dict = {cls: set(iter_own_register_deps(cls, classes_to_register)) for cls in __bl_classes}
 
     # Put all the UI into the list first
-    __bl_ordered_classes = []
-    for cls in __bl_classes:
-        if cls.__module__.startswith('ui.'):
-            __bl_ordered_classes.append(cls)
+    __bl_ordered_classes = [cls for cls in __bl_classes if is_ui_class(cls)]
 
     # Then put everything else sorted into the list
     for cls in toposort(deps_dict):
-        if not cls.__module__.startswith('ui.'):
+        if not is_ui_class(cls):
             __bl_ordered_classes.append(cls)
 
 
-def iter_classes_to_register():
-    for cls in __bl_classes:
-        yield cls
+def is_ui_class(cls):
+    # Under the extension system a module is named
+    # bl_ext.<repo>.cats_blender_plugin.ui.main, so match on the package instead
+    # of a 'ui.' prefix that only held for a plain add-on install.
+    module = cls.__module__
+    return '.ui.' in module or module.endswith('.ui')
 
 
 def iter_own_register_deps(cls, own_classes):
@@ -72,9 +65,11 @@ def iter_register_deps(cls):
 
 
 def get_dependency_from_annotation(value):
-    if isinstance(value, tuple) and len(value) == 2:
-        if value[0] in (bpy.props.PointerProperty, bpy.props.CollectionProperty):
-            return value[1]["type"]
+    # bpy.props.* returns a _PropertyDeferred, not the (function, keywords) tuple
+    # it returned before Blender 2.93.
+    if isinstance(value, bpy.props._PropertyDeferred):
+        if value.function in (bpy.props.PointerProperty, bpy.props.CollectionProperty):
+            return value.keywords.get("type")
     return None
 
 
@@ -92,5 +87,11 @@ def toposort(deps_dict):
                 sorted_values.add(value)
             else:
                 unsorted.append(value)
-        deps_dict = {value : deps_dict[value] - sorted_values for value in unsorted}
+        if len(unsorted) == len(deps_dict):
+            # Nothing was resolved this pass, so the rest depend on each other.
+            # Append them as-is instead of looping forever.
+            print('CATS: dependency cycle between', [cls.__name__ for cls in unsorted])
+            sorted_list.extend(unsorted)
+            break
+        deps_dict = {value: deps_dict[value] - sorted_values for value in unsorted}
     return sorted_list

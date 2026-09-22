@@ -136,18 +136,18 @@ def register():
         except ModuleNotFoundError:
             pass
 
-    # Register all classes
+    # Register all classes, in the order order_classes() resolved
     count = 0
     tools.register.order_classes()
-    for cls in tools.register.__bl_classes:
+    ordered_classes = tools.register.get_ordered_classes()
+    for cls in ordered_classes:
         try:
             bpy.utils.register_class(cls)
             count += 1
         except ValueError:
             pass
-    # print('Registered', count, 'CATS classes.')
-    if count < len(tools.register.__bl_classes):
-        print('Skipped', len(tools.register.__bl_classes) - count, 'CATS classes.')
+    if count < len(ordered_classes):
+        print('Skipped', len(ordered_classes) - count, 'CATS classes.')
 
     # Register Scene types
     extentions.register()
@@ -209,7 +209,7 @@ def unregister():
 
     # Unload all classes in reverse order
     count = 0
-    for cls in reversed(tools.register.__bl_ordered_classes):
+    for cls in reversed(tools.register.get_ordered_classes()):
         try:
             bpy.utils.unregister_class(cls)
             count += 1
