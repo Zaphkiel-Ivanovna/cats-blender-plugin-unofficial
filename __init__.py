@@ -11,8 +11,6 @@ file_dir = os.path.join(os.path.dirname(__file__), 'extern_tools')
 if file_dir not in sys.path:
     sys.path.append(file_dir)
 
-import shutil
-import pathlib
 import requests
 
 from importlib.util import find_spec
@@ -64,104 +62,6 @@ from .tools.translations import t
 # https://b3d.interplanety.org/en/using-external-ide-pycharm-for-writing-blender-scripts/
 
 
-def remove_corrupted_files():
-    to_remove = [
-        'googletrans',
-        'mmd_tools_local',
-        'extern_tools',
-        'resources',
-        'tests',
-        'tools',
-        'ui',
-        '.gitignore',
-        '.travis.yml',
-        'LICENSE',
-        'README.md',
-        '__init__.py',
-        'addon_updater.py',
-        'addon_updater_ops.py',
-        'extensions.py',
-        'globs.py',
-        'updater.py',
-    ]
-
-    no_perm = False
-    os_error = False
-    wrong_path = False
-    faulty_installation = False
-    main_dir = str(pathlib.Path(os.path.dirname(__file__)).resolve())
-
-    if main_dir.endswith('addons'):
-        print(os.path.dirname(__file__))
-        print(main_dir)
-        print('Wrong installation path')
-        wrong_path = True
-    else:
-        main_dir = str(pathlib.Path(os.path.dirname(__file__)).parent.resolve())
-
-    # print('Checking for CATS files in the addon directory:\n' + main_dir)
-    files = [f for f in os.listdir(main_dir) if os.path.isfile(os.path.join(main_dir, f))]
-    folders = [f for f in os.listdir(main_dir) if os.path.isdir(os.path.join(main_dir, f))]
-
-    for file in files:
-        if file in to_remove:
-            file_path = os.path.join(main_dir, file)
-            try:
-                os.remove(file_path)
-                faulty_installation = True
-                print('REMOVED', file)
-            except PermissionError:
-                no_perm = True
-                print("Permissions: Failed to remove file " + file)
-            except OSError:
-                os_error = True
-                print("OS: Failed to remove file " + file)
-
-    for folder in folders:
-        if folder in to_remove:
-            folder_path = os.path.join(main_dir, folder)
-            try:
-                shutil.rmtree(folder_path)
-                faulty_installation = True
-                print('REMOVED', folder)
-            except PermissionError:
-                no_perm = True
-                print("Permissions: Failed to remove folder " + folder)
-            except OSError:
-                os_error = True
-                print("Failed to remove folder " + folder)
-
-    if no_perm:
-        unregister()
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.restartAdmin'))
-
-    if os_error:
-        unregister()
-        sys.tracebacklimit = 0
-        message = t('Main.error.deleteFollowing')
-
-        for folder in folders:
-            if folder in to_remove:
-                message += "\n- " + os.path.join(main_dir, folder)
-
-        for file in files:
-            if file in to_remove:
-                message += "\n- " + os.path.join(main_dir, file)
-
-        raise ImportError(message)
-
-    if wrong_path:
-        unregister()
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.installViaPreferences'))
-
-    if faulty_installation:
-        unregister()
-        sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.restartAndEnable'))
-
-
 def check_unsupported_blender_versions():
     # Don't allow Blender versions older than 4.5
     if bpy.app.version < (5, 0):
@@ -198,9 +98,6 @@ def register():
 
     # Check for unsupported Blender versions
     check_unsupported_blender_versions()
-
-    # Check for faulty CATS installations
-    remove_corrupted_files()
 
     # Set cats version string
     version_str = set_cats_version_string()
