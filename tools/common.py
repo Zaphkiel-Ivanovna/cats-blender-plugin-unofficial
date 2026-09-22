@@ -358,9 +358,10 @@ def apply_modifier(mod, as_shapekey=False):
 def remove_bone(find_bone):
     armature = get_armature()
     switch('EDIT')
-    for bone in armature.data.edit_bones:
-        if bone.name == find_bone:
-            armature.data.edit_bones.remove(bone)
+    edit_bones = armature.data.edit_bones
+    bone = edit_bones.get(find_bone)
+    if bone:
+        edit_bones.remove(bone)
 
 
 def remove_empty():
@@ -866,7 +867,8 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
     for mesh in meshes_to_join:
         set_active(mesh)
         
-        for mod in mesh.modifiers:
+        # Snapshot the collection: removing while iterating skips the next entry
+        for mod in list(mesh.modifiers):
             if mod.type == 'SUBSURF':
                 mesh.modifiers.remove(mod)
 
@@ -1952,7 +1954,9 @@ def add_principled_shader(mesh: Object, bake_mmd=True):
             # Remove any extra Material Output nodes that aren't the Cats one
             # If there is more than one Material Output node or Principled BSDF node with the Cats label, remove
             # all but the first found.
-            for node in nodes:
+            # Snapshot the collection: removing while iterating skips the next node,
+            # which left extra Material Output nodes behind for Blender to pick from.
+            for node in list(nodes):
                 if node.bl_idname == principled_bsdf_idname and node.label == principled_shader_label:
                     if cats_principled_bsdf:
                         # Remove any extra principled bsdf nodes with the label

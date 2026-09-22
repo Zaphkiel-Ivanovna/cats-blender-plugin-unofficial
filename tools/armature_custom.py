@@ -761,8 +761,9 @@ def mix_vertex_groups(mesh: bpy.types.Object, vg_from_name: str, vg_to_name: str
 
 def add_armature_modifier(mesh: bpy.types.Object, armature: bpy.types.Object):
     """Add an armature modifier to the mesh."""
-    # Remove previous armature modifiers
-    for mod in mesh.modifiers:
+    # Remove previous armature modifiers. Iterate a snapshot: removing from the
+    # collection while iterating it shifts the rest and skips the next entry.
+    for mod in list(mesh.modifiers):
         if mod.type == 'ARMATURE':
             mesh.modifiers.remove(mod)
 
