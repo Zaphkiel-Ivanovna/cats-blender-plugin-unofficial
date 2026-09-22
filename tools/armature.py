@@ -574,9 +574,6 @@ class FixArmature(bpy.types.Operator):
                 mesh.lock_rotation[i] = False
                 mesh.lock_scale[i] = False
 
-            if hasattr(mesh, 'layers'):
-                mesh.layers[0] = True
-
             if source_engine and Common.has_shapekeys(mesh):
                 mesh.data.shape_keys.key_blocks[0].name = "Basis"
 
