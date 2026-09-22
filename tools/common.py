@@ -1036,18 +1036,24 @@ def separate_by_shape_keys(context, mesh):
     bpy.ops.mesh.select_all(action='DESELECT')
 
     switch('OBJECT')
-    selected_count = 0
-    max_count = 0
+    vertex_count = len(mesh.data.vertices)
+    moved_by_shape_key = np.zeros(vertex_count, dtype=bool)
     if has_shapekeys(mesh):
         for kb in mesh.data.shape_keys.key_blocks:
-            for i, (v0, v1) in enumerate(zip(kb.relative_key.data, kb.data)):
-                max_count += 1
-                if v0.co != v1.co:
-                    mesh.data.vertices[i].select = True
-                    selected_count += 1
+            relative_key = kb.relative_key
+            if relative_key is None or relative_key == kb:
+                continue
+            same = _get_shape_key_co(kb) == _get_shape_key_co(relative_key)
+            moved_by_shape_key |= ~np.all(same.reshape(-1, 3), axis=1)
 
-    if not selected_count or selected_count == max_count:
+    # Count distinct vertices. The old code summed one counter per key block and
+    # compared it against another that counted every vertex of every key block, so
+    # the "everything moves, nothing to separate" bail-out could never fire.
+    selected_count = int(moved_by_shape_key.sum())
+    if not selected_count or selected_count == vertex_count:
         return False
+
+    mesh.data.vertices.foreach_set('select', moved_by_shape_key)
 
     switch('EDIT')
     bpy.ops.mesh.select_all(action='INVERT')
