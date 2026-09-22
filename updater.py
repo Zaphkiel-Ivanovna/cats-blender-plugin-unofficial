@@ -454,14 +454,24 @@ def get_github_releases(repo):
         if version_tag.startswith('v'):
             version_tag = version_tag[1:]
         
-        # Store full tag  
-        version_list[full_tag] = [
+        # Key on the normalized tag: check_for_update_available parses it as numbers
+        version_list[version_tag] = [
             version['zipball_url'],
             version['body'],
             version['published_at'].split('T')[0]
         ]
 
     return True
+
+
+def parse_version(version_str):
+    """Turn a normalized tag such as '5.0.2' into [5, 0, 2], stopping at the first non-numeric part."""
+    parts = []
+    for part in version_str.split('.'):
+        if not part.isdigit():
+            break
+        parts.append(int(part))
+    return parts
 
 
 def check_for_update_available():
@@ -471,16 +481,12 @@ def check_for_update_available():
     global latest_version, latest_version_str
     latest_version = []
     for version in version_list.keys():
-        latest_version_str = version
-        for i in version.split('.'):
-            if i.isdigit():
-                latest_version.append(int(i))
-        if latest_version:
-            break
+        parsed = parse_version(version)
+        if parsed > latest_version:
+            latest_version = parsed
+            latest_version_str = version
 
-    # print(latest_version, '>', current_version)
-    if latest_version > current_version:
-        return True
+    return bool(latest_version) and latest_version > current_version
 
 
 def finish_update_checking(error=''):
