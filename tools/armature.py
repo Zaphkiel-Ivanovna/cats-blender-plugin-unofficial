@@ -882,7 +882,7 @@ class FixArmature(bpy.types.Operator):
                         parent.name = 'Left ' + value
                         break
 
-        for bone in armature.data.edit_bones:
+        for bone in list(armature.data.edit_bones):
             if bone.name in Bones.bone_list or bone.name.startswith(tuple(Bones.bone_list_with)):
                 if bone.parent:
                     temp_list_reweight_bones[bone.name] = bone.parent.name
@@ -1069,9 +1069,9 @@ class FixArmature(bpy.types.Operator):
             Common.set_active(mesh)
 
 
-            for mod in mesh.modifiers:
+            for mod in list(mesh.modifiers):
                 if mod.type == 'ARMATURE':
-                    bpy.ops.object.modifier_remove(modifier=mod.name)
+                    mesh.modifiers.remove(mod)
 
             print('FIX TWIST BONES')
             print(bones_to_delete)

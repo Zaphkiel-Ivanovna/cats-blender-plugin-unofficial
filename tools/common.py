@@ -277,11 +277,11 @@ def remove_rigidbodies_global():
 
     if bpy.context.scene.remove_rigidbodies_joints_global:
         print('Collections:')
-        for collection in bpy.data.collections:
+        for collection in list(bpy.data.collections):
             print(' ' + collection.name, collection.name.lower())
             if 'rigidbody' in collection.name.lower():
                 print('DELETE')
-                for obj in collection.objects:
+                for obj in list(collection.objects):
                     delete(obj)
                 bpy.data.collections.remove(collection)
 
@@ -692,9 +692,7 @@ def get_meshes_objects(armature_name=None, mode=0, check=True, visible_only=Fals
                     meshes.append(ob)
 
     if visible_only:
-        for mesh in meshes:
-            if is_hidden(mesh):
-                meshes.remove(mesh)
+        meshes = [mesh for mesh in meshes if not is_hidden(mesh)]
 
     if check:
         current_active = context.view_layer.objects.active
@@ -802,9 +800,6 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
     for mesh in get_meshes_objects(armature_name=armature_name):
         if mesh.name == active_mesh_name:
             set_active(mesh)
-        elif mesh.name in meshes_to_join:
-            delete(mesh)
-            print('DELETED', mesh.name, mesh.users)
 
     mesh = context.view_layer.objects.active
     if mesh:
@@ -828,12 +823,12 @@ def repair_mesh(mesh, armature_name):
     mesh.parent_type = 'OBJECT'
 
     mod_count = 0
-    for mod in mesh.modifiers:
+    for mod in list(mesh.modifiers):
         mod.show_expanded = False
         if mod.type == 'ARMATURE':
             mod_count += 1
             if mod_count > 1:
-                bpy.ops.object.modifier_remove(modifier=mod.name)
+                mesh.modifiers.remove(mod)
                 continue
             mod.object = get_armature(armature_name=armature_name)
             mod.show_viewport = True
@@ -1213,9 +1208,8 @@ def delete_bone_constraints(armature_name=None):
     switch('POSE')
 
     for bone in armature.pose.bones:
-        if len(bone.constraints) > 0:
-            for constraint in bone.constraints:
-                bone.constraints.remove(constraint)
+        for constraint in list(bone.constraints):
+            bone.constraints.remove(constraint)
 
     switch('EDIT')
 
