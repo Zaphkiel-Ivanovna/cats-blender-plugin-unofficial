@@ -2204,6 +2204,21 @@ _enum_choice_fix_scheduled = {}
 
 # Check for, and fix out of bounds enum choices, settings the index to the last choice and adding temporary duplicate
 # choices so the index remains within the bounds for this call
+# Blender only needs the items list to reach the stored index so it stops warning
+# about an out-of-range value before the scheduled fix lands. A corrupted or legacy
+# index can be arbitrarily large and this runs on every redraw, so cap the padding.
+_max_enum_padding = 256
+
+
+def _pad_enum_choices(choices, target_index):
+    """Append placeholder choices until target_index is in range, up to the cap."""
+    num_choices = len(choices)
+    for i in range(min(target_index - num_choices + 1, _max_enum_padding)):
+        temp_identifier = f"__temp_choice_{num_choices + i}__"
+        choices.append((temp_identifier, choices[0][1], choices[0][2]))
+    return choices
+
+
 def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_name, property_path, in_place=True):
     """Check for and fix an EnumProperty if its index is out of bounds.
 
@@ -2261,11 +2276,7 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
                 numeric_value = int(current_choice_value)
                 if numeric_value >= num_choices:
                     # Add padding for numeric string that's out of bounds
-                    num_extra_to_add = numeric_value - num_choices + 1
-                    for i in range(num_extra_to_add):
-                        temp_identifier = f"__temp_choice_{num_choices + i}__"
-                        temp_choice = (temp_identifier, choices[0][1], choices[0][2])
-                        choices.append(temp_choice)
+                    _pad_enum_choices(choices, numeric_value)
             except (ValueError, TypeError):
                 pass
             # Schedule fix to set to first valid choice
@@ -2282,13 +2293,8 @@ def _fix_out_of_bounds_enum_choices(property_holder, scene, choices, property_na
         else:
             # Out of bounds index - add temporary padding choices to prevent warnings
             # and schedule a fix to set it to the first valid choice
-            num_extra_to_add = current_choice_value - num_choices + 1
-            for i in range(num_extra_to_add):
-                # Create a unique temporary identifier
-                temp_identifier = f"__temp_choice_{num_choices + i}__"
-                temp_choice = (temp_identifier, choices[0][1], choices[0][2])
-                choices.append(temp_choice)
-            
+            _pad_enum_choices(choices, current_choice_value)
+
             replacement_identifier = choices[0][0]
             _schedule_enum_fix(property_holder, scene, property_name, property_path, replacement_identifier)
 
@@ -2351,7 +2357,7 @@ def is_enum_non_empty(string):
 
 
 # Recursion guard: tracks which enum properties are currently being evaluated to prevent infinite recursion.
-# Dictionary of {int: set(str)} where keys are id(self) and set elements are property names being processed.
+# Dictionary of {int: set(str)} where keys are self.as_pointer() and set elements are property names being processed.
 # This prevents crashes when enum items callbacks are triggered recursively during state changes like object deletion.
 # See issue #431 for details on the recursion bug this guards against.
 _enum_items_being_processed = {}
@@ -2365,9 +2371,12 @@ def wrap_dynamic_enum_items(items_func, property_name, sort=True, in_place=True,
     Only works for properties whose owner is a scene.
     By setting is_holder=false, the fix for out of bounds values will be disabled."""
     def wrapped_items_func(self, context):
-        # Create unique key for this property to detect recursion
-        # Using id(self) and property_name to uniquely identify each property being accessed
-        holder_id = id(self)
+        # Create unique key for this property to detect recursion.
+        # as_pointer() is the address of the underlying data and is the same for every
+        # wrapper Blender hands out for it. id() is the address of the wrapper object,
+        # which Blender recreates per access, so the guard could miss a recursive call
+        # and a recycled id could flag an unrelated holder as already in progress.
+        holder_id = self.as_pointer()
         property_set = _enum_items_being_processed.setdefault(holder_id, set())
 
         # Check if we're already processing this property (recursion guard)
