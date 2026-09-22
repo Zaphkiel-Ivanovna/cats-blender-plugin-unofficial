@@ -788,33 +788,32 @@ class FixArmature(bpy.types.Operator):
                 name2 = names[2].replace('\\Left', 'Right').replace('\\left', 'right').replace('\\L', 'R').replace('\\l', 'r')
             conflicting_bones.append((names0, name1, name2))
 
+        # Index the bones by lowercase name once. These lookups used to be linear
+        # scans over every edit bone with .lower() recomputed on both sides, run
+        # once per candidate name.
+        bone_lookup = {}
+        for bone_tmp in armature.data.edit_bones:
+            bone_lookup.setdefault(bone_tmp.name.lower(), bone_tmp)
+
         for names in conflicting_bones:
-
-            bone = None
-            for bone_tmp in armature.data.edit_bones:
-                if bone_tmp.name.lower() == names[1].lower():
-                    bone = bone_tmp
-                    break
-
+            bone = bone_lookup.get(names[1].lower())
             if not bone:
                 continue
 
-            found_all = True
-            for name in names[0]:
-                found = False
-                for bone_tmp in armature.data.edit_bones:
-                    if bone_tmp.name.lower() == name.lower():
-                        found = True
-                        break
-                if not found:
-                    found_all = False
-                    break
-
-            if found_all:
+            if all(name.lower() in bone_lookup for name in names[0]):
+                old_key = bone.name.lower()
                 bone.name = names[2]
+                if bone_lookup.get(old_key) is bone:
+                    del bone_lookup[old_key]
+                bone_lookup.setdefault(bone.name.lower(), bone)
 
         for bone in armature.data.edit_bones:
             bone.name = bone.name.replace('.', '_')
+
+        # Names were rewritten just above, so rebuild the index
+        bone_lookup = {}
+        for bone_tmp in armature.data.edit_bones:
+            bone_lookup.setdefault(bone_tmp.name.lower(), bone_tmp)
 
         spines = []
         spine_parts = []
@@ -835,12 +834,7 @@ class FixArmature(bpy.types.Operator):
                     current_step += 1
                     wm.progress_update(current_step)
 
-                    bone_final = None
-                    for bone_tmp in armature.data.edit_bones:
-                        if bone_tmp.name.lower() == bone[1].lower():
-                            bone_final = bone_tmp
-                            break
-
+                    bone_final = bone_lookup.get(bone[1].lower())
                     if not bone_final:
                         continue
 
@@ -852,7 +846,11 @@ class FixArmature(bpy.types.Operator):
                         continue
 
                     if bone[0] not in armature.data.edit_bones:
+                        old_key = bone_final.name.lower()
                         bone_final.name = bone[0]
+                        if bone_lookup.get(old_key) is bone_final:
+                            del bone_lookup[old_key]
+                        bone_lookup.setdefault(bone_final.name.lower(), bone_final)
 
         mixamo = False
         for bone in armature.data.edit_bones:

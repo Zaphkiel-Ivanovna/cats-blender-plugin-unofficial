@@ -1003,20 +1003,27 @@ def prepare_separation(mesh):
 
 def clean_shapekeys(mesh):
     if has_shapekeys(mesh):
-        for kb in mesh.data.shape_keys.key_blocks:
-            if can_remove_shapekey(kb):
+        # Cached for this call only. Nearly every key block shares the same
+        # relative key, so without this its coordinates are read once per block.
+        co_getter = lru_cache(maxsize=None)(_get_shape_key_co)
+        # Snapshot: shape_key_remove mutates the collection being walked
+        for kb in list(mesh.data.shape_keys.key_blocks):
+            if can_remove_shapekey(kb, co_getter):
                 mesh.shape_key_remove(kb)
+        del co_getter
         if len(mesh.data.shape_keys.key_blocks) == 1:
             mesh.shape_key_remove(mesh.data.shape_keys.key_blocks[0])
 
 
-def can_remove_shapekey(key_block):
+def can_remove_shapekey(key_block, co_getter=None):
     if 'mmd_' in key_block.name:
         return True
     relative_key = key_block.relative_key
     if relative_key is None or relative_key == key_block:
         return False
-    return np.array_equal(_get_shape_key_co(key_block), _get_shape_key_co(relative_key))
+    if co_getter is None:
+        co_getter = _get_shape_key_co
+    return np.array_equal(co_getter(key_block), co_getter(relative_key))
 
 
 def save_shapekey_order(mesh_name):
