@@ -19,7 +19,9 @@ Blender Rigify, Sims 2, Motion Builder and 3DS Max.
 This is a fork of [teamneoneko/Cats-Blender-Plugin-Unofficial-][upstream] that targets
 Blender 5.0 and 5.1.
 
-## Install
+<h2 id="install">
+  <img src="docs/sections/install.svg" alt="Install" width="580">
+</h2>
 
 Blender 5.x installs Cats as an extension.
 
@@ -32,7 +34,9 @@ Blender 5.x installs Cats as an extension.
 The add-on refuses to load outside 5.0 and 5.1, and `blender_manifest.toml` declares the
 same bounds, so Blender will not offer it to an unsupported version either.
 
-## Panels
+<h2 id="panels">
+  <img src="docs/sections/panels.svg" alt="Panels" width="580">
+</h2>
 
 | Panel | What it covers |
 | --- | --- |
@@ -45,7 +49,9 @@ same bounds, so Blender will not offer it to an unsupported version either.
 | Bone Parenting | Reparent bone chains onto a single root |
 | MMD Options | MMD-specific import and cleanup |
 
-## What changed in this fork
+<h2 id="what-changed-in-this-fork">
+  <img src="docs/sections/changed.svg" alt="What changed in this fork" width="580">
+</h2>
 
 Everything below is measured on a 323-bone, 14-mesh, 124k-vertex VRChat avatar, and
 verified to produce the same model as before.
@@ -65,7 +71,9 @@ verified to produce the same model as before.
 
 Around thirty other fixes are in the git history, each with what was measured.
 
-## Development
+<h2 id="development">
+  <img src="docs/sections/dev.svg" alt="Development" width="580">
+</h2>
 
 The test suite runs Blender headless. It installs the working tree as an extension into a
 throwaway directory, so your own Blender configuration is never touched.
@@ -81,7 +89,9 @@ Cases live in `tests/headless/cases/`. `_models.py` builds synthetic armatures s
 reach different branches of Fix Model, which covers 68.8% of its statements. The rest
 needs real assets: mmd_tools bone morph data, VRM meshes and Source Engine rigs.
 
-## License
+<h2 id="license">
+  <img src="docs/sections/license.svg" alt="License" width="580">
+</h2>
 
 The combined work is **GPL-3.0-or-later**, and `LICENSE` carries the full text.
 
@@ -101,7 +111,9 @@ Bundled in `extern_tools/`:
 | `google_trans_new` | MIT |
 | `opencc` | Apache-2.0 |
 
-## Credits
+<h2 id="credits">
+  <img src="docs/sections/credits.svg" alt="Credits" width="580">
+</h2>
 
 Cats was written by [absolute-quantum][origin] and the GiveMeAllYourCats team, and has
 been maintained since by Yusarina and the [Unofficial Cats team][upstream].

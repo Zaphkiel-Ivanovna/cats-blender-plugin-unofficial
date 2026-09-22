@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 56" width="580" height="56" role="img" aria-label="INSTALL">
+  <defs>
+    <linearGradient id="install-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#151c26"/><stop offset="0.5" stop-color="#0f141b"/><stop offset="1" stop-color="#0d1117" stop-opacity="0"/></linearGradient>
+    <radialGradient id="install-h" cx="0.06" cy="0.5" r="0.42"><stop offset="0" stop-color="#f5792a" stop-opacity="0.30"/><stop offset="1" stop-color="#f5792a" stop-opacity="0"/></radialGradient>
+    <clipPath id="install-c"><rect width="580" height="56" rx="9"/></clipPath>
+  </defs>
+  <g clip-path="url(#install-c)">
+    <rect width="580" height="56" fill="url(#install-g)"/><rect width="580" height="56" fill="url(#install-h)"/>
+    <circle cx="306" cy="29" r="1.2" fill="#f5a86a" opacity="0.27"/><circle cx="344" cy="39" r="1.2" fill="#f5a86a" opacity="0.21"/><circle cx="446" cy="11" r="0.9" fill="#f5a86a" opacity="0.26"/><circle cx="391" cy="11" r="0.9" fill="#f5a86a" opacity="0.21"/><circle cx="521" cy="30" r="0.9" fill="#f5a86a" opacity="0.14"/><circle cx="549" cy="22" r="0.9" fill="#f5a86a" opacity="0.31"/><circle cx="474" cy="40" r="0.9" fill="#f5a86a" opacity="0.28"/>
+    <rect x="0" y="0" width="3" height="56" fill="#f5792a"/>
+    <g transform="translate(40 28)" color="#f5792a" stroke="#f5792a" stroke-linecap="round">
+      <rect x="-16" y="-16" width="33" height="33" rx="10" fill="#141a22" fill-opacity="0.9" stroke-opacity="0.42" stroke-width="1.25"/>
+      <g transform="scale(0.8)"><path d="M0-9v12" stroke-width="2.2" stroke-linecap="round"/><path d="M-5-1 0 3 5-1" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M-8 7h16" stroke-width="2.2" stroke-linecap="round"/></g>
+    </g>
+    <text x="72" y="34" fill="#e7ecf3" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="3.2">INSTALL</text>
+  </g>
+</svg>
