@@ -815,6 +815,8 @@
         "EyeTrackingPanel.troubleshooting.shapeKeys": "• 确认形态键命名正确",
         "EyeTrackingPanel.troubleshooting.boneWeights": "• 确认眼睛骨骼权重正确",
         "EyeTrackingPanel.troubleshooting.restPosition": "• 确认骨架处于静止位置",
-        "merge_armatures.error.mustapplytransforms": "检测到变换问题！\n\n骨架在合并前存在需要修复的非均匀缩放或旋转。\n这对于防止缩放和变形问题非常重要。\n\n修复方法：\n1. 在合并设置中启用「应用变换」复选框\n2. 重试合并\n\n「应用变换」选项会标准化所有缩放、旋转和位置值，\n使骨架无需更改大小即可正确合并。\n\n如果已勾选「应用变换」但仍显示此错误，\n请将此作为错误报告。"
+        "merge_armatures.error.mustapplytransforms": "检测到变换问题！\n\n骨架在合并前存在需要修复的非均匀缩放或旋转。\n这对于防止缩放和变形问题非常重要。\n\n修复方法：\n1. 在合并设置中启用「应用变换」复选框\n2. 重试合并\n\n「应用变换」选项会标准化所有缩放、旋转和位置值，\n使骨架无需更改大小即可正确合并。\n\n如果已勾选「应用变换」但仍显示此错误，\n请将此作为错误报告。",
+        "download_file.notAnExtension": "CATS 未以扩展方式安装，请通过 编辑 > 偏好设置 > 获取扩展 进行更新",
+        "download_file.installFailed": "Blender 无法安装更新，请通过 编辑 > 偏好设置 > 获取扩展 更新 CATS"
     }
 }

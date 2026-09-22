@@ -853,6 +853,8 @@
         "EyeTrackingPanel.troubleshooting.restPosition": "• 아마추어가 기본 자세에 있는지 확인",
         "merge_armatures.error.mustapplytransforms": "아마추어의 X, Y, Z축 스케일 값이 서로 다르며,\n균일한 스케일링(모든 축이 동일한 스케일 값)이 되어있지 않습니다.\n\n아마추어 병합 전 이를 수정하는 것은\n올바른 본 변환과 변형 문제를 방지하는데 중요합니다.\n\n이 경고에도 불구하고 병합을 진행하려면\n병합을 시작하기 전에 '트랜스폼 적용'을 체크해주세요.",
         "Scene.progress_update.label": "진행률",
-        "Scene.progress_update.desc": "작업의 진행률 표시기"
+        "Scene.progress_update.desc": "작업의 진행률 표시기",
+        "download_file.notAnExtension": "CATS가 확장 프로그램으로 설치되어 있지 않습니다. 편집 > 환경 설정 > 확장 프로그램 받기 에서 업데이트해주세요",
+        "download_file.installFailed": "Blender가 업데이트를 설치하지 못했습니다. 편집 > 환경 설정 > 확장 프로그램 받기 에서 CATS를 업데이트해주세요"
     }
 }

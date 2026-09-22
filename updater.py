@@ -46,6 +46,18 @@ ICON_URL = 'URL'
 RELEASES_API_URL = 'https://git.disroot.org/api/v1/repos/Neoneko/Cats-Blender-Plugin/releases'
 REQUEST_TIMEOUT = 15
 
+
+def get_repo_module():
+    """The extension repository this add-on is installed in, e.g. 'user_default'.
+
+    Returns None when it is not running as an extension, in which case Blender's
+    installer cannot be used and the update has to go through the Extensions UI.
+    """
+    parts = (__package__ or '').split('.')
+    if len(parts) >= 3 and parts[0] == 'bl_ext':
+        return parts[1]
+    return None
+
 BLENDER_VERSION = tuple(bpy.app.version)
 
 class CheckForUpdateButton(bpy.types.Operator):
@@ -428,28 +440,20 @@ def get_github_releases(repo):
     if not data:
         return False
     
-    tag_prefix = ""
-    if (5, 0) <= BLENDER_VERSION < (5, 1):
-        tag_prefix = "5.0."
+    # Releases are tagged <blender major>.<blender minor>.<cats major>.<cats minor>,
+    # e.g. 5.0.3.1 for Blender 5.0, so only the ones built for the running Blender
+    # are candidates.
+    tag_prefix = f"{BLENDER_VERSION[0]}.{BLENDER_VERSION[1]}."
 
     for version in data:
         full_tag = version.get('tag_name')
-        
-        if tag_prefix and not full_tag.startswith(tag_prefix):
-            continue   
-            
-        version_tag = full_tag
-        
-        if tag_prefix and version_tag.startswith(tag_prefix):
-            version_tag = version_tag[len(tag_prefix):]
-        
-        version_tag = version_tag.replace('-', '.')
-        if version_tag.startswith('v.'):
-            version_tag = version_tag[2:]
-        if version_tag.startswith('v'):
-            version_tag = version_tag[1:]
-        
-        version_list[version_tag] = [
+        if not full_tag or not full_tag.startswith(tag_prefix):
+            continue
+
+        # Keep the tag whole. CATS_VERSION carries the same four components, so the
+        # two compare directly; stripping the prefix here left check_for_update_available
+        # comparing [3, 1] against [5, 0, 2, 2], which is never greater.
+        version_list[full_tag] = [
             version['zipball_url'],
             version['body'],
             version['published_at'].split('T')[0]
@@ -584,29 +588,26 @@ def download_file(update_url):
         finish_update(error=t('download_file.cantFindCATS'))
         return
 
-    clean_addon_dir()
+    repo_module = get_repo_module()
+    if not repo_module:
+        print("NOT INSTALLED AS AN EXTENSION")
+        shutil.rmtree(downloads_dir)
+        finish_update(error=t('download_file.notAnExtension'))
+        return
 
-    def move_files(from_dir, to_dir):
-        print('MOVE FILES TO DIR:', to_dir)
-        files = os.listdir(from_dir)
-        for file in files:
-            file_dir = os.path.join(from_dir, file)
-            target_dir = os.path.join(to_dir, file)
-            print('MOVE', file_dir)
+    package_zip = os.path.join(downloads_dir, "cats-extension")
+    shutil.make_archive(package_zip, 'zip', root_dir=extracted_zip_dir)
+    package_zip += ".zip"
 
-            if os.path.isfile(file_dir) and os.path.isfile(target_dir):
-                os.remove(target_dir)
-                shutil.move(file_dir, to_dir)
-                print('REMOVED AND MOVED', file)
-
-            elif os.path.isdir(file_dir) and os.path.isdir(target_dir):
-                move_files(file_dir, target_dir)
-
-            else:
-                shutil.move(file_dir, to_dir)
-                print('MOVED', file)
-
-    move_files(extracted_zip_dir, main_dir)
+    try:
+        bpy.ops.extensions.package_install_files('EXEC_DEFAULT',
+                                                 filepath=package_zip,
+                                                 repo=repo_module)
+    except RuntimeError as e:
+        print("INSTALL FAILED:", e)
+        shutil.rmtree(downloads_dir)
+        finish_update(error=t('download_file.installFailed'))
+        return
 
     print('DELETE DOWNLOADS DIR')
     shutil.rmtree(downloads_dir)
@@ -624,52 +625,6 @@ def finish_update(error=''):
     bpy.ops.cats_updater.update_complete_panel('INVOKE_DEFAULT')
     ui_refresh()
     print("UPDATE DONE!")
-
-
-def clean_addon_dir():
-    print("CLEAN ADDON FOLDER")
-
-    files = [f for f in os.listdir(main_dir) if os.path.isfile(os.path.join(main_dir, f))]
-    folders = [f for f in os.listdir(main_dir) if os.path.isdir(os.path.join(main_dir, f))]
-
-    for f in files:
-        file = os.path.join(main_dir, f)
-        try:
-            os.remove(file)
-            print("Clean removing file {}".format(file))
-        except OSError:
-            print("Failed to pre-remove file " + file)
-
-    for f in folders:
-        folder = os.path.join(main_dir, f)
-        if f.startswith('.') or f == 'resources' or f == 'downloads':
-            continue
-
-        try:
-            shutil.rmtree(folder)
-            print("Clean removing folder and contents {}".format(folder))
-        except OSError:
-            print("Failed to pre-remove folder " + folder)
-
-    resources_folder = os.path.join(main_dir, 'resources')
-    files = [f for f in os.listdir(resources_folder) if os.path.isfile(os.path.join(resources_folder, f))]
-    folders = [f for f in os.listdir(resources_folder) if os.path.isdir(os.path.join(resources_folder, f))]
-
-    for f in files:
-        file = os.path.join(resources_folder, f)
-        try:
-            os.remove(file)
-            print("Clean removing file {}".format(file))
-        except OSError:
-            print("Failed to pre-remove " + file)
-
-    for f in folders:
-        folder = os.path.join(resources_folder, f)
-        try:
-            shutil.rmtree(folder)
-            print("Clean removing folder and contents {}".format(folder))
-        except OSError:
-            print("Failed to pre-remove folder " + folder)
 
 
 def set_ignored_version():
