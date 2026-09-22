@@ -25,10 +25,6 @@
       <text x="92" y="192" fill="#7d8796" font-size="18" font-weight="500" letter-spacing="7.5">BLENDER PLUGIN</text>
       <rect x="92" y="218" width="146" height="2" fill="url(#rule)"/>
       <text x="92" y="258" fill="#9aa4b2" font-size="17">Import and optimize models for VRChat</text>
-      <g transform="translate(500 251)">
-        <rect x="-96" y="-19" width="192" height="38" rx="19" fill="#f5792a" fill-opacity="0.14" stroke="#f5792a" stroke-opacity="0.55" stroke-width="1.2"/>
-        <text y="6" fill="#f5a86a" font-size="15" font-weight="600" text-anchor="middle" letter-spacing="1.8">BLENDER 5.0 &#183; 5.1</text>
-      </g>
     </g>
     <rect x="0.5" y="0.5" width="1199" height="299" rx="12" fill="none" stroke="#f5792a" stroke-opacity="0.2"/>
   </g>
