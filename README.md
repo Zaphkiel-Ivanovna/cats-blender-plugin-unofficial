@@ -125,8 +125,22 @@ Bundled in `extern_tools/`:
   <img src="docs/sections/credits.svg" alt="Credits" width="580">
 </h2>
 
-Cats was written by [absolute-quantum][origin] and the GiveMeAllYourCats team, and has
-been maintained since by Yusarina and the [Unofficial Cats team][upstream].
+**[absolute-quantum/cats-blender-plugin][origin]** is where Cats comes from. Hotox and
+GiveMeAllYourCats wrote it and released it under MIT, which is why a good part of this
+tree still carries MIT headers.
+
+**[teamneoneko/Cats-Blender-Plugin-Unofficial-][upstream]** has carried it since, under
+GPL-3.0, maintained by Yusarina and 989onan of the Neoneko Team, with a branch and a
+release line per Blender series.
+
+**This fork** is maintained by [Zaphkiel-Ivanovna][fork] and tracks Blender 5.0 and 5.1.
+It exists for the 5.x work and follows upstream for everything else, so a bug that is not
+specific to 5.x is better reported [there][upstream-issues].
+
+Earlier versions also carry work from Feilen, Jordo, Ruubick, triazo, Mysteryem, rurre,
+Shotariya and Neitri.
 
 [upstream]: https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-
+[upstream-issues]: https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-/issues
 [origin]: https://github.com/absolute-quantum/cats-blender-plugin
+[fork]: https://github.com/Zaphkiel-Ivanovna
