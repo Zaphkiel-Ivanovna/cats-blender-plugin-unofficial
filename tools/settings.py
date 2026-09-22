@@ -14,9 +14,6 @@ from ..extern_tools.google_trans_new.google_trans_new import google_translator
 from . import translate as Translate
 from .translations import t
 
-def get_settings_file():
-    return globs.user_data_path("settings.json")
-
 settings_data = None
 settings_data_unchanged = None
 
@@ -89,7 +86,7 @@ def load_settings():
     global settings_data, settings_data_unchanged
 
     try:
-        with open(get_settings_file(), encoding="utf8") as file:
+        with open(globs.get_settings_file(), encoding="utf8") as file:
             settings_data = json.load(file, object_pairs_hook=collections.OrderedDict)
     except FileNotFoundError:
         print("SETTINGS FILE NOT FOUND!")
@@ -140,7 +137,7 @@ def load_settings():
 
 def save_settings():
     try:
-        with open(get_settings_file(), 'w', encoding="utf8") as outfile:
+        with open(globs.get_settings_file(), 'w', encoding="utf8") as outfile:
             json.dump(settings_data, outfile, ensure_ascii=False, indent=4)
     except OSError as e:
         print('COULD NOT SAVE SETTINGS:', e)

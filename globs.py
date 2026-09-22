@@ -37,6 +37,12 @@ def user_data_dir(*subpaths):
     os.makedirs(path, exist_ok=True)
     return path
 
+
+def get_settings_file():
+    # Lives here rather than in tools.settings: tools.translations needs it while
+    # tools.settings is still half imported, and the two import each other.
+    return user_data_path("settings.json")
+
 # for bone root parenting
 root_bones = {}
 root_bones_choices = {}
