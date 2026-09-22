@@ -336,10 +336,10 @@ def remove_empty():
         unselect_all()
 
 
-def remove_unused_vertex_groups(ignore_main_bones=False):
+def remove_unused_vertex_groups(ignore_main_bones=False, meshes=None):
     remove_count = 0
     unselect_all()
-    for mesh in get_meshes_objects(mode=2):
+    for mesh in get_meshes_objects(mode=2) if meshes is None else meshes:
         mesh.update_from_editmode()
 
         vgroup_used = {i: False for i, k in enumerate(mesh.vertex_groups)}

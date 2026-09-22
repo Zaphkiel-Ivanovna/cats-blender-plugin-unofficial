@@ -505,7 +505,7 @@ def merge_armatures(
         process_vertex_groups(meshes_merged)
 
         if bpy.context.scene.merge_armatures_remove_zero_weight_bones:
-            Common.remove_unused_vertex_groups(ignore_main_bones=True)
+            Common.remove_unused_vertex_groups(ignore_main_bones=True, meshes=meshes_merged)
             if Common.get_meshes_objects(armature_name=base_armature_name):
                 Common.delete_zero_weight(armature_name=base_armature_name)
 
@@ -523,12 +523,6 @@ def merge_armatures(
 
     Common.set_default_stage()
     Common.remove_rigidbodies_global()
-    if not mesh_only and bpy.context.scene.merge_armatures_remove_zero_weight_bones:
-        Common.remove_unused_vertex_groups()
-        if Common.get_meshes_objects(armature_name=base_armature_name):
-            Common.delete_zero_weight(armature_name=base_armature_name)
-        Common.set_default_stage()
-        Common.remove_rigidbodies_global()
 
     Common.clear_unused_data()
 
