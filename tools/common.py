@@ -817,6 +817,8 @@ def join_meshes(armature_name=None, mode=0, apply_transformations=True, repair_s
         if repair_shape_keys:
             repair_shapekey_order(mesh.name, armature_name)
 
+        sort_material_slots(mesh)
+
     update_material_list()
 
     return mesh
@@ -1506,6 +1508,37 @@ def get_tricount(obj):
 
     bmesh.ops.triangulate(bmesh_mesh, faces=bmesh_mesh.faces[:])
     return len(bmesh_mesh.faces)
+
+
+def sort_material_slots(mesh):
+    """Put the material slots in a stable, name-sorted order.
+
+    After a join the slot order follows the view layer, and Blender's FBX importer
+    does not produce a stable object order, so joining the same model twice gives a
+    different slot order each time. That order is visible downstream, most obviously
+    when the model is taken into Unity. Face material indices are remapped so the
+    result looks identical.
+    """
+    materials = [slot.material for slot in mesh.material_slots]
+    if len(materials) < 2:
+        return
+
+    order = sorted(range(len(materials)),
+                   key=lambda i: (materials[i] is None, materials[i].name if materials[i] else ''))
+    if order == list(range(len(materials))):
+        return
+
+    remap = np.empty(len(order), dtype=np.int32)
+    for new_index, old_index in enumerate(order):
+        remap[old_index] = new_index
+
+    polygons = mesh.data.polygons
+    indices = np.empty(len(polygons), dtype=np.int32)
+    polygons.foreach_get('material_index', indices)
+    polygons.foreach_set('material_index', remap[indices])
+
+    for new_index, old_index in enumerate(order):
+        mesh.material_slots[new_index].material = materials[old_index]
 
 
 def clean_material_names(mesh):
