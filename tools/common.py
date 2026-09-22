@@ -1011,12 +1011,10 @@ def clean_shapekeys(mesh):
 def can_remove_shapekey(key_block):
     if 'mmd_' in key_block.name:
         return True
-    if key_block.relative_key == key_block:
+    relative_key = key_block.relative_key
+    if relative_key is None or relative_key == key_block:
         return False
-    for v0, v1 in zip(key_block.relative_key.data, key_block.data):
-        if v0.co != v1.co:
-            return False
-    return True
+    return np.array_equal(_get_shape_key_co(key_block), _get_shape_key_co(relative_key))
 
 
 def save_shapekey_order(mesh_name):

@@ -604,13 +604,14 @@ class FixArmature(bpy.types.Operator):
 
             fixed_uv_coords = 0
             for uv in mesh.data.uv_layers:
-                for vert in range(len(uv.data) - 1):
-                    if math.isnan(uv.data[vert].uv.x):
-                        uv.data[vert].uv.x = 0
-                        fixed_uv_coords += 1
-                    if math.isnan(uv.data[vert].uv.y):
-                        uv.data[vert].uv.y = 0
-                        fixed_uv_coords += 1
+                uvs = np.empty(len(uv.data) * 2, dtype=np.float32)
+                uv.data.foreach_get('uv', uvs)
+                nan_mask = np.isnan(uvs)
+                n_nan = int(nan_mask.sum())
+                if n_nan:
+                    uvs[nan_mask] = 0.0
+                    uv.data.foreach_set('uv', uvs)
+                    fixed_uv_coords += n_nan
 
         to_translate = []
         for bone in armature.data.bones:
