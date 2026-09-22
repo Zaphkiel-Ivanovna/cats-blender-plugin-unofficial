@@ -17,3 +17,16 @@ license = [
 [permissions]
 files = "Import and export model files, and cache translation data"
 network = "Download translations and check for add-on updates"
+
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  "/.git/",
+  "/*.zip",
+  "/.github/",
+  "/docs/",
+  "/tests/",
+  "/.gitignore",
+  "/.gitmodules",
+  "/extern_tools/google_trans_new/test.txt",
+]
