@@ -21,6 +21,7 @@ network = "Download translations and check for add-on updates"
 [build]
 paths_exclude_pattern = [
   "__pycache__/",
+  ".DS_Store",
   "/.git/",
   "/*.zip",
   "/.github/",
@@ -29,7 +30,7 @@ paths_exclude_pattern = [
   "/.gitignore",
   "/.gitmodules",
   "/extern_tools/google_trans_new/test.txt",
-  "/CODE_OF_CONDUCT.md",
+  "/CODE_OF_CONDUCT.md", "/ruff.toml",
   "/CONTRIBUTING.md",
   "/SECURITY.md",
 ]

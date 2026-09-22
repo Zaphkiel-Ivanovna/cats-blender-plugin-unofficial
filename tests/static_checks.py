@@ -30,7 +30,7 @@ def check_compiles():
     """Every file parses, and none of them warns."""
     errors = []
     for path in sources():
-        with io.open(path, encoding="utf-8") as handle:
+        with open(path, encoding="utf-8") as handle:
             text = handle.read()
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always", SyntaxWarning)
@@ -89,7 +89,7 @@ def check_manifest():
     if not isinstance(manifest.get("permissions"), dict):
         errors.append("blender_manifest.toml: permissions must be a table with a reason per entry")
 
-    with io.open(os.path.join(ROOT, "__init__.py"), encoding="utf-8") as handle:
+    with open(os.path.join(ROOT, "__init__.py"), encoding="utf-8") as handle:
         init = handle.read()
     tree = ast.parse(init)
     gate = []
@@ -106,11 +106,32 @@ def check_manifest():
     return errors
 
 
+def check_ruff():
+    """ruff, configured by ruff.toml, which is expected to report nothing."""
+    import shutil
+    import subprocess
+
+    if shutil.which("ruff") is None:
+        if os.environ.get("CI"):
+            return ["ruff is not installed, and CI must not skip the lint check"]
+        print("  ruff not installed, skipping the lint check")
+        return []
+
+    proc = subprocess.run(["ruff", "check", "--no-cache", "--quiet",
+                           "--output-format", "concise", ROOT],
+                          capture_output=True, text=True, cwd=ROOT)
+    if proc.returncode == 0:
+        return []
+    lines = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+    return lines or [proc.stderr.strip() or f"ruff exited {proc.returncode}"]
+
+
 def main():
     failed = 0
     for label, check in (("syntax and warnings", check_compiles),
                          ("undefined names", check_undefined_names),
-                         ("manifest", check_manifest)):
+                         ("manifest", check_manifest),
+                         ("ruff", check_ruff)):
         problems = check()
         status = "ok" if not problems else f"{len(problems)} problem(s)"
         print(f"  {label:22s} {status}")

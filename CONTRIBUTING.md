@@ -29,6 +29,11 @@ python3 tests/headless/run.py --case mesh       # one case file
 The headless suite installs the tree into a throwaway directory, so your own Blender
 configuration is untouched. CI runs both against Blender 5.0, 5.1 and 5.2.
 
+`static_checks.py` includes ruff, configured in `ruff.toml` and expected to report
+nothing. `ruff check --fix .` handles most of what it raises. The rules it leaves out are
+either Blender idioms or style that would only churn inherited code, and each one is
+there on purpose, so a new exclusion needs a reason in the pull request.
+
 ## What a good change looks like
 
 **Say what you measured.** Cats edits people's avatars, so "this is faster" or "this is

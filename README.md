@@ -86,8 +86,10 @@ python3 tests/headless/run.py --case mesh                   # one case file
 ```
 
 `static_checks.py` compiles every file and fails on a `SyntaxWarning`, runs pyflakes
-narrowed to undefined names, and checks that the manifest is within schema and that its
-Blender bounds match the version gate in `__init__.py`.
+narrowed to undefined names, checks that the manifest is within schema and that its
+Blender bounds match the version gate in `__init__.py`, and runs ruff against
+`ruff.toml`, which is expected to report nothing. Ruff is skipped when it is not
+installed, except in CI, where a missing ruff fails the check.
 
 The headless suite installs the working tree as an extension into a throwaway directory,
 so your own Blender configuration is never touched. Cases live in
