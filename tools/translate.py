@@ -34,14 +34,9 @@ def get_dictionary_file():
 def get_dictionary_google_file():
     return globs.user_data_path("dictionary_google.json")
 
-def get_cats_dir(context):
-    prefs = context.preferences.addons["cats-blender-plugin"].preferences
-    
-    if prefs.custom_shapekeys_export_dir: 
-        return prefs.custom_shapekeys_export_dir
-    
-    # Fallback to default cats directory
-    return os.path.join(bpy.utils.user_resource('DATAFILES'), "cats") 
+def get_cats_dir():
+    """Default export directory, used when the scene property is empty."""
+    return os.path.join(bpy.utils.user_resource('DATAFILES'), "cats")
 
 @register_wrap
 class TranslateShapekeyButton(bpy.types.Operator):
@@ -56,7 +51,7 @@ class TranslateShapekeyButton(bpy.types.Operator):
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
             # Fallback to default dir
-            cats_dir = get_cats_dir(context)  
+            cats_dir = get_cats_dir()
             
         # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
@@ -156,7 +151,7 @@ class TranslateBonesButton(bpy.types.Operator):
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
             # Fallback to default dir
-            cats_dir = get_cats_dir(context)  
+            cats_dir = get_cats_dir()
             
         # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
@@ -245,7 +240,7 @@ class TranslateObjectsButton(bpy.types.Operator):
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
             # Fallback to default dir
-            cats_dir = get_cats_dir(context)
+            cats_dir = get_cats_dir()
 
         # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
@@ -329,7 +324,7 @@ class TranslateMaterialsButton(bpy.types.Operator):
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
             # Fallback to default dir
-            cats_dir = get_cats_dir(context)
+            cats_dir = get_cats_dir()
 
         # Check if dir exists or can be created
         if not os.path.exists(cats_dir):

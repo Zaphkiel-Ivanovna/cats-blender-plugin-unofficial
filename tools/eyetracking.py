@@ -3,6 +3,7 @@
 import os
 import bpy
 import copy
+import json
 import math
 import bmesh
 import mathutils
