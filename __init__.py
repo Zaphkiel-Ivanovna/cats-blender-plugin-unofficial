@@ -158,13 +158,7 @@ def register():
     # Load the dictionaries and check if they are found.
     globs.dict_found = tools.translate.load_translations()
 
-    # Set preferred Blender options
-    if hasattr(tools.common.get_user_preferences(), 'system') and hasattr(tools.common.get_user_preferences().system, 'use_international_fonts'):
-        tools.common.get_user_preferences().system.use_international_fonts = True
-    elif hasattr(tools.common.get_user_preferences(), 'view') and hasattr(tools.common.get_user_preferences().view, 'use_international_fonts'):
-        tools.common.get_user_preferences().view.use_international_fonts = True
-    else:
-        pass  # From 2.83 on this is no longer needed
+    # Set preferred Blender options. use_international_fonts went away in 2.83.
     tools.common.get_user_preferences().filepaths.use_file_compression = True
     bpy.context.window_manager.addon_support = {'OFFICIAL', 'COMMUNITY'}
 
