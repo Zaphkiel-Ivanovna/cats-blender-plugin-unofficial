@@ -58,7 +58,6 @@ def get_repo_module():
         return parts[1]
     return None
 
-BLENDER_VERSION = tuple(bpy.app.version)
 
 class CheckForUpdateButton(bpy.types.Operator):
     bl_idname = 'cats_updater.check_for_update'
@@ -440,11 +439,9 @@ def get_github_releases():
     if not isinstance(data, list):
         return False
     
-    tag_prefix = f"{BLENDER_VERSION[0]}.{BLENDER_VERSION[1]}."
-
     for version in data:
         full_tag = version.get('tag_name')
-        if not full_tag or not full_tag.startswith(tag_prefix):
+        if not full_tag:
             continue
 
         if version.get('draft') or version.get('prerelease'):

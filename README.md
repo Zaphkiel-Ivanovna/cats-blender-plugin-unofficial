@@ -58,8 +58,9 @@ verified to produce the same model as before.
 
 - **Fix Model runs in 2.0s instead of 11.7s.** Most of it came from two loops that walked
   1.6M UV coordinates and 2.3M shape key vertices one Python call at a time.
-- **Update checking works.** Release tags carry the Blender version, and the comparison
-  stripped that prefix off one side but not the other, so no update was ever offered.
+- **Update checking works.** The comparison stripped the Blender series off one side of
+  the tag but not the other, so no update was ever offered. This fork ships one build for
+  every series it supports, so its version carries no series at all.
 - **Updates install through Blender.** The updater used to delete every file in its own
   install directory, including the `__init__.py` it was running from, then copy the new
   tree in by hand. It now hands the package to `extensions.package_install_files`.
@@ -95,7 +96,7 @@ different branches of Fix Model, which covers 68.8% of its statements. The rest 
 real assets: mmd_tools bone morph data, VRM meshes and Source Engine rigs.
 
 CI runs both against Blender 5.0, 5.1 and 5.2, builds the extension and keeps the zip as an
-artifact. Pushing a tag like `5.0.3.1` runs the same checks, then publishes the zip to a
+artifact. Pushing a tag like `1.0.0` runs the same checks, then publishes the zip to a
 release. `.github/actions/setup-blender` resolves the latest patch in a series and caches
 the tarball, so a warm run skips the 300MB download.
 

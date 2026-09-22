@@ -23,7 +23,7 @@ body:
     attributes:
       label: Cats version
       description: From the Cats panel header, or the version you installed.
-      placeholder: "5.0.2.2"
+      placeholder: "1.0.0"
     validations:
       required: true
 

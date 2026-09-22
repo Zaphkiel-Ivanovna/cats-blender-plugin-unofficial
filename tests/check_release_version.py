@@ -1,11 +1,11 @@
 # GPL License
 """Check that a release tag agrees with the version in the source.
 
-Releases are tagged <blender major>.<blender minor>.<cats major>.<cats minor>, so
-5.0.3.1 is the CATS 3.1 build for Blender 5.0. __init__.CATS_VERSION carries the
-same four parts, and blender_manifest.toml carries the first three.
+This fork ships one build for every Blender series the manifest supports, so the tag
+is a plain <major>.<minor>.<patch> owned by the fork rather than one encoding a Blender
+release. __init__.CATS_VERSION and blender_manifest.toml carry the same three parts.
 
-    python3 tests/check_release_version.py 5.0.3.1
+    python3 tests/check_release_version.py 1.0.0
 """
 
 import ast
@@ -26,31 +26,32 @@ def cats_version():
     raise SystemExit("CATS_VERSION not found in __init__.py")
 
 
+def parts(value):
+    return tuple(int(piece) for piece in value.split("."))
+
+
 def main(argv):
     if len(argv) != 2:
         raise SystemExit(f"usage: {argv[0]} <tag>")
     tag = argv[1].lstrip("v")
 
-    if not re.fullmatch(r"\d+\.\d+\.\d+\.\d+", tag):
-        raise SystemExit(f"tag {tag!r} is not <blender major>.<blender minor>.<cats major>.<cats minor>")
+    if not re.fullmatch(r"\d+\.\d+\.\d+", tag):
+        raise SystemExit(f"tag {tag!r} is not <major>.<minor>.<patch>")
 
     with open(os.path.join(ROOT, "blender_manifest.toml"), "rb") as handle:
         manifest = tomllib.load(handle)
 
     source = cats_version()
-    expected_manifest = ".".join(tag.split(".")[:3])
     problems = []
 
     if source != tag:
         problems.append(f"__init__.CATS_VERSION is {source}, the tag says {tag}")
-    if manifest["version"] != expected_manifest:
-        problems.append(f"manifest version is {manifest['version']}, the tag implies {expected_manifest}")
+    if manifest["version"] != tag:
+        problems.append(f"manifest version is {manifest['version']}, the tag says {tag}")
 
-    series = ".".join(tag.split(".")[:2])
-    low = ".".join(manifest["blender_version_min"].split(".")[:2])
-    high = ".".join(manifest["blender_version_max"].split(".")[:2])
-    if not (low <= series < high):
-        problems.append(f"tag targets Blender {series}, the manifest supports {low} up to but not including {high}")
+    low, high = manifest["blender_version_min"], manifest["blender_version_max"]
+    if parts(low) >= parts(high):
+        problems.append(f"manifest supports Blender {low} up to {high}, an empty range")
 
     for problem in problems:
         print(f"  {problem}")
