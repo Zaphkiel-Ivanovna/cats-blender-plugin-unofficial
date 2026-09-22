@@ -536,7 +536,10 @@ def register():
         default=False
     )
 
-    _registered_properties = sorted(set(dir(Scene)) - attributes_before)
+    # Union with what is already recorded: on a second register() without an
+    # unregister() in between, the earlier properties are already on Scene and would
+    # drop out of the diff.
+    _registered_properties = sorted(set(_registered_properties) | (set(dir(Scene)) - attributes_before))
 
 
 def unregister():
