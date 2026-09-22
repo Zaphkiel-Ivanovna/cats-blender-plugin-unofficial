@@ -9,7 +9,6 @@ import requests
 
 from .. import globs
 from .register import register_wrap
-from . import settings
 
 bundled_translations_dir = globs.resource_path("translations")
 
@@ -138,6 +137,7 @@ def update_ui(self, context):
     if current_language != last_loaded_language:
         print(f"Language changed from {last_loaded_language} to {current_language}, reloading translations")
 
+        from . import settings
         settings.update_settings_core(None, None)
 
         load_translations()
