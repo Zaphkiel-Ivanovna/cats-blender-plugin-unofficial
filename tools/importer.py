@@ -752,7 +752,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             bpy.ops.import_scene.smd('EXEC_DEFAULT',files=[{'name': "barney_reference.smd"}], append = "NEW_ARMATURE",directory=os.path.dirname(os.path.abspath(__file__))+"/../extern_tools/valve_resources/")
         except AttributeError:
             bpy.ops.cats_importer.install_source('INVOKE_DEFAULT')
-            return None
+            return {'CANCELLED'}
         print("cleaning imported armature")
         objects = [j.name for j in bpy.context.selected_objects]
         barneycollection = bpy.data.collections.get("barney_collection")
@@ -1139,8 +1139,9 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 bone.select_tail = True
                 arms_armature.data.edit_bones.active = bone
             else:
-                print("Getting upper arm for side "+side+" Has failed! Exiting!")
-                return None
+                Common.switch('OBJECT')
+                self.report({'ERROR'}, "Getting upper arm for side "+side+" has failed!")
+                return {'CANCELLED'}
 
             bpy.ops.armature.select_similar(type='CHILDREN')
             for bone in bpy.context.selected_editable_bones:

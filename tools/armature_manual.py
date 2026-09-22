@@ -1471,23 +1471,19 @@ class CreateDigitigradeLegs(bpy.types.Operator):
         return False
 
     def execute(self, context):
+        for digi0 in context.selected_editable_bones:
+            bone = digi0
+            for _ in range(3):
+                if not bone.children:
+                    self.report({'ERROR'}, "Bone format incorrect! Please select a chain of 4 continuous bones!")
+                    return {'CANCELLED'}
+                bone = bone.children[0]
 
         for digi0 in context.selected_editable_bones:
-            digi1 = None
-            digi2 = None
-            digi3 = None
-
-            try:
-                digi1 = digi0.children[0]
-                digi2 = digi1.children[0]
-                digi3 = digi2.children[0]
-            except Exception:
-                print("bone format incorrect! Please select a chain of 4 continious bones!")
-            digi4 = None
-            try:
-                digi4 = digi3.children[0]
-            except Exception:
-                print("no toe bone. Continuing.")
+            digi1 = digi0.children[0]
+            digi2 = digi1.children[0]
+            digi3 = digi2.children[0]
+            digi4 = digi3.children[0] if digi3.children else None
             digi0.select = True
             digi1.select = True
             digi2.select = True
@@ -1747,9 +1743,9 @@ class ConvertToValveButton(bpy.types.Operator):
                 translate_bone_fails += 1
 
         if translate_bone_fails > 0:
-            self.report({'INFO'}, "Error! Failed to translate {translate_bone_fails} bones! Make sure your model has standard bone names!")
-
-        self.report({'INFO'}, 'Connected all bones!')
+            self.report({'WARNING'}, f"Failed to translate {translate_bone_fails} bones! Make sure your model has standard bone names!")
+        else:
+            self.report({'INFO'}, 'Converted all bones to Valve names!')
         return {'FINISHED'}
 
 @register_wrap
