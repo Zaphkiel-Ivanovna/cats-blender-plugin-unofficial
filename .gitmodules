@@ -1,3 +1,0 @@
-[submodule "extern_tools/immersive_scaler"]
-	path = extern_tools/imscale
-	url = git@github.com:teamneoneko/immersive_scaler.git

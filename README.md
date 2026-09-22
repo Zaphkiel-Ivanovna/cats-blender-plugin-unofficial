@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/actions/workflows/Cats%20Tests.yml"><img src="https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/actions/workflows/Cats%20Tests.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/actions/workflows/ci.yml"><img src="https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/actions/workflows/ci.yml/badge.svg" alt="Tests"></a>
   <img src="https://img.shields.io/badge/blender-5.0%20%7C%205.1-f5792a" alt="Blender 5.0 and 5.1">
   <img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="GPL-3.0-or-later">
 </p>
