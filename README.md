@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/actions/workflows/ci.yml"><img src="https://github.com/Zaphkiel-Ivanovna/cats-blender-plugin-unofficial/actions/workflows/ci.yml/badge.svg" alt="Tests"></a>
-  <img src="https://img.shields.io/badge/blender-5.0%20%7C%205.1-f5792a" alt="Blender 5.0 and 5.1">
+  <img src="https://img.shields.io/badge/blender-5.0%20%7C%205.1%20%7C%205.2-f5792a" alt="Blender 5.0, 5.1 and 5.2">
   <img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="GPL-3.0-or-later">
 </p>
 
@@ -17,7 +17,7 @@ It reads rigs from MMD, XNALara, Mixamo, Source Engine, Unreal Engine, DAZ/Poser
 Blender Rigify, Sims 2, Motion Builder and 3DS Max.
 
 This is a fork of [teamneoneko/Cats-Blender-Plugin-Unofficial-][upstream] that targets
-Blender 5.0 and 5.1.
+Blender 5.0, 5.1 and 5.2.
 
 <h2 id="install">
   <img src="docs/sections/install.svg" alt="Install" width="580">
@@ -31,7 +31,7 @@ Blender 5.x installs Cats as an extension.
    right, and pick **Install from Disk**.
 3. Select the zip. Cats appears in the 3D view sidebar under the **CATS** tab.
 
-The add-on refuses to load outside 5.0 and 5.1, and `blender_manifest.toml` declares the
+The add-on refuses to load outside 5.0, 5.1 and 5.2, and `blender_manifest.toml` declares the
 same bounds, so Blender will not offer it to an unsupported version either.
 
 <h2 id="panels">
@@ -94,7 +94,7 @@ so your own Blender configuration is never touched. Cases live in
 different branches of Fix Model, which covers 68.8% of its statements. The rest needs
 real assets: mmd_tools bone morph data, VRM meshes and Source Engine rigs.
 
-CI runs both against Blender 5.0 and 5.1, builds the extension and keeps the zip as an
+CI runs both against Blender 5.0, 5.1 and 5.2, builds the extension and keeps the zip as an
 artifact. Pushing a tag like `5.0.3.1` runs the same checks, then publishes the zip to a
 release. `.github/actions/setup-blender` resolves the latest patch in a series and caches
 the tarball, so a warm run skips the 300MB download.
@@ -133,7 +133,7 @@ tree still carries MIT headers.
 GPL-3.0, maintained by Yusarina and 989onan of the Neoneko Team, with a branch and a
 release line per Blender series.
 
-**This fork** is maintained by [Zaphkiel-Ivanovna][fork] and tracks Blender 5.0 and 5.1.
+**This fork** is maintained by [Zaphkiel-Ivanovna][fork] and tracks Blender 5.0, 5.1 and 5.2.
 It exists for the 5.x work and follows upstream for everything else, so a bug that is not
 specific to 5.x is better reported [there][upstream-issues].
 

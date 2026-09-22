@@ -19,7 +19,7 @@ came out. Numbers beat adjectives.
 -->
 
 - [ ] `tests/static_checks.py` passes
-- [ ] `tests/headless/run.py` passes on Blender 5.0 and 5.1
+- [ ] `tests/headless/run.py` passes on Blender 5.0, 5.1 and 5.2
 - [ ] Ran it on a real model, and the result is what it was before the change
 
 ## Notes for the reviewer

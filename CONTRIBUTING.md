@@ -27,7 +27,7 @@ python3 tests/headless/run.py --case mesh       # one case file
 ```
 
 The headless suite installs the tree into a throwaway directory, so your own Blender
-configuration is untouched. CI runs both against Blender 5.0 and 5.1.
+configuration is untouched. CI runs both against Blender 5.0, 5.1 and 5.2.
 
 ## What a good change looks like
 

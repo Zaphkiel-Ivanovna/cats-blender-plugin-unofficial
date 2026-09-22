@@ -7,9 +7,10 @@ handled by their own branches [upstream](https://github.com/teamneoneko/Cats-Ble
 
 | Blender | Supported |
 | --- | --- |
+| 5.2 | yes |
 | 5.1 | yes |
 | 5.0 | yes |
-| 5.0 and earlier | upstream |
+| 4.x and earlier | upstream |
 
 ## Reporting a vulnerability
 

@@ -13,8 +13,8 @@ body:
     id: blender
     attributes:
       label: Blender version
-      description: From Help > About Blender, for example 5.1.2.
-      placeholder: "5.1.2"
+      description: From Help > About Blender, for example 5.2.2.
+      placeholder: "5.2.2"
     validations:
       required: true
 
