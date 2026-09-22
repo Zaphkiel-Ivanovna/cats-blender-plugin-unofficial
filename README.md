@@ -75,19 +75,29 @@ Around thirty other fixes are in the git history, each with what was measured.
   <img src="docs/sections/dev.svg" alt="Development" width="580">
 </h2>
 
-The test suite runs Blender headless. It installs the working tree as an extension into a
-throwaway directory, so your own Blender configuration is never touched.
+Two suites, both runnable without leaving your checkout.
 
 ```sh
-python3 tests/headless/run.py --blender /path/to/blender
-python3 tests/headless/run.py --case mesh      # one file
+pip install -r tests/requirements.txt
+python3 tests/static_checks.py                              # no Blender, no network
+python3 tests/headless/run.py --blender /path/to/blender    # the real thing
+python3 tests/headless/run.py --case mesh                   # one case file
 ```
 
-CI runs the same suite against Blender 5.0 and 5.1 on every push.
+`static_checks.py` compiles every file and fails on a `SyntaxWarning`, runs pyflakes
+narrowed to undefined names, and checks that the manifest is within schema and that its
+Blender bounds match the version gate in `__init__.py`.
 
-Cases live in `tests/headless/cases/`. `_models.py` builds synthetic armatures shaped to
-reach different branches of Fix Model, which covers 68.8% of its statements. The rest
-needs real assets: mmd_tools bone morph data, VRM meshes and Source Engine rigs.
+The headless suite installs the working tree as an extension into a throwaway directory,
+so your own Blender configuration is never touched. Cases live in
+`tests/headless/cases/`, and `_models.py` builds synthetic armatures shaped to reach
+different branches of Fix Model, which covers 68.8% of its statements. The rest needs
+real assets: mmd_tools bone morph data, VRM meshes and Source Engine rigs.
+
+CI runs both against Blender 5.0 and 5.1, builds the extension and keeps the zip as an
+artifact. Pushing a tag like `5.0.3.1` runs the same checks, then publishes the zip to a
+release. `.github/actions/setup-blender` resolves the latest patch in a series and caches
+the tarball, so a warm run skips the 300MB download.
 
 <h2 id="license">
   <img src="docs/sections/license.svg" alt="License" width="580">

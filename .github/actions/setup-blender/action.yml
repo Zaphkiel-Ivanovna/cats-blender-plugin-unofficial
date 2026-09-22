@@ -1,0 +1,72 @@
+name: Set up Blender
+description: Resolve, cache and install a Blender release, then expose it on PATH.
+
+inputs:
+  version:
+    description: Blender release series, for example "5.0". The latest patch in the series is used.
+    required: true
+
+outputs:
+  executable:
+    description: Absolute path to the Blender binary.
+    value: ${{ steps.resolve.outputs.executable }}
+  resolved-version:
+    description: The full version that was installed, for example "5.0.1".
+    value: ${{ steps.resolve.outputs.resolved-version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve the latest patch in the ${{ inputs.version }} series
+      id: resolve
+      shell: bash
+      env:
+        SERIES: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        base="https://download.blender.org/release/Blender${SERIES}"
+        file=$(curl -fsSL --retry 3 --retry-delay 2 "$base/" \
+          | grep -oE "blender-${SERIES}\.[0-9]+-linux-x64\.tar\.xz" \
+          | sort -V | tail -1)
+        if [[ -z "$file" ]]; then
+          echo "::error::No linux-x64 build published for Blender $SERIES"
+          exit 1
+        fi
+        {
+          echo "file=$file"
+          echo "url=$base/$file"
+          echo "dir=$RUNNER_TOOL_CACHE/blender/$SERIES"
+          echo "executable=$RUNNER_TOOL_CACHE/blender/$SERIES/blender"
+          echo "resolved-version=${file#blender-}"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Restore Blender ${{ steps.resolve.outputs.file }}
+      id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.resolve.outputs.dir }}
+        key: blender-${{ runner.os }}-${{ runner.arch }}-${{ steps.resolve.outputs.file }}
+
+    - name: Download and unpack
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        URL: ${{ steps.resolve.outputs.url }}
+        DIR: ${{ steps.resolve.outputs.dir }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$DIR"
+        curl -fsSL --retry 3 --retry-delay 2 "$URL" \
+          | tar -xJ -C "$DIR" --strip-components=1
+
+    - name: Expose on PATH and report
+      shell: bash
+      env:
+        DIR: ${{ steps.resolve.outputs.dir }}
+        CACHED: ${{ steps.cache.outputs.cache-hit }}
+      run: |
+        set -euo pipefail
+        echo "$DIR" >> "$GITHUB_PATH"
+        version=$("$DIR/blender" --background --version | head -1)
+        echo "$version"
+        printf '%s from %s\n' "$version" "${CACHED:+cache}${CACHED:-download}" >> "$GITHUB_STEP_SUMMARY"

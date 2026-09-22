@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, forked_dev]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tests/requirements.txt
+
+      - run: pip install -r tests/requirements.txt
+
+      - name: Run static checks
+        run: python3 tests/static_checks.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Blender ${{ matrix.blender }}
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Kept in step with blender_version_min and blender_version_max
+        blender: ["5.0", "5.1"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: blender
+        uses: ./.github/actions/setup-blender
+        with:
+          version: ${{ matrix.blender }}
+
+      - name: Run the headless suite
+        env:
+          BLENDER: ${{ steps.blender.outputs.executable }}
+          RESOLVED: ${{ steps.blender.outputs.resolved-version }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### Blender $RESOLVED"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python3 tests/headless/run.py --blender "$BLENDER" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  package:
+    name: Package
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: blender
+        uses: ./.github/actions/setup-blender
+        with:
+          version: "5.0"
+
+      - name: Validate the manifest
+        run: blender --command extension validate . | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Build the extension
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          blender --command extension build --source-dir . --output-dir dist
+          ls -l dist
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: extension
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  ci:
+    name: CI
+    if: always()
+    needs: [static, test, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fail if any job did not succeed
+        run: |
+          set -euo pipefail
+          results='${{ join(needs.*.result, ' ') }}'
+          echo "job results: $results"
+          for result in $results; do
+            [[ "$result" == "success" ]] || exit 1
+          done

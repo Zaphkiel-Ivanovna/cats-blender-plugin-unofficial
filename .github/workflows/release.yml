@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and publish
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  verify:
+    name: Verify on Blender ${{ matrix.blender }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        blender: ["5.0", "5.1"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Check the tag against the source
+        run: python3 tests/check_release_version.py "$TAG"
+
+      - id: blender
+        uses: ./.github/actions/setup-blender
+        with:
+          version: ${{ matrix.blender }}
+
+      - name: Run the headless suite
+        env:
+          BLENDER: ${{ steps.blender.outputs.executable }}
+        run: python3 tests/headless/run.py --blender "$BLENDER"
+
+  publish:
+    name: Publish
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-blender
+        with:
+          version: "5.0"
+
+      - name: Build the extension
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          blender --command extension validate .
+          blender --command extension build --source-dir . --output-dir dist
+          ls -l dist
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: extension-${{ env.TAG }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          series="${TAG%.*.*}"
+          notes=$(mktemp)
+          {
+            echo "Built for Blender ${series}.x."
+            echo
+            echo "Install through **Edit > Preferences > Get Extensions**, the dropdown at the top right, then **Install from Disk**."
+          } > "$notes"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip --clobber
+          else
+            gh release create "$TAG" dist/*.zip --title "$TAG" --notes-file "$notes" --verify-tag
+          fi
