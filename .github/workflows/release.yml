@@ -67,6 +67,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: ./.github/actions/setup-blender
@@ -92,34 +93,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          supported=$(python3 - <<'PY'
-          import tomllib
-
-          with open("blender_manifest.toml", "rb") as handle:
-              manifest = tomllib.load(handle)
-
-          def parts(value):
-              return tuple(int(piece) for piece in value.split("."))
-
-          low, high = parts(manifest["blender_version_min"]), parts(manifest["blender_version_max"])
-          names = [f"{low[0]}.{minor}" for minor in range(low[1], high[1])] if low[0] == high[0] else []
-
-          if not names:
-              print(f"{low[0]}.{low[1]} or newer, below {high[0]}.{high[1]}")
-          elif len(names) == 1:
-              print(names[0])
-          else:
-              print(", ".join(names[:-1]) + " and " + names[-1])
-          PY
-          )
           notes=$(mktemp)
-          {
-            echo "Works with Blender ${supported}."
-            echo
-            echo "Install through **Edit > Preferences > Get Extensions**, the dropdown at the top right, then **Install from Disk**."
-          } > "$notes"
+          python3 .github/scripts/release_notes.py "$TAG" "$GITHUB_REPOSITORY" > "$notes"
+          cat "$notes" >> "$GITHUB_STEP_SUMMARY"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/*.zip --clobber
+            gh release edit "$TAG" --notes-file "$notes"
           else
             gh release create "$TAG" dist/*.zip --title "$TAG" --notes-file "$notes" --verify-tag
           fi

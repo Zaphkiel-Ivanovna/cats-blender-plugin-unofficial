@@ -22,6 +22,7 @@ Then **Edit > Preferences > Get Extensions**, the dropdown at the top right,
 ```sh
 pip install -r tests/requirements.txt
 python3 tests/static_checks.py
+python3 tests/check_release_notes.py
 python3 tests/headless/run.py --blender /path/to/blender
 python3 tests/headless/run.py --case mesh       # one case file
 ```

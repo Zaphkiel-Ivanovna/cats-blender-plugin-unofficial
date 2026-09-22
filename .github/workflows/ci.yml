@@ -41,6 +41,9 @@ jobs:
       - name: Run static checks
         run: python3 tests/static_checks.py | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Check the release notes generator
+        run: python3 tests/check_release_notes.py
+
   test:
     name: Blender ${{ matrix.blender }}
     needs: static

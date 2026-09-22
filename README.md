@@ -81,6 +81,7 @@ Two suites, both runnable without leaving your checkout.
 ```sh
 pip install -r tests/requirements.txt
 python3 tests/static_checks.py                              # no Blender, no network
+python3 tests/check_release_notes.py                        # the release notes generator
 python3 tests/headless/run.py --blender /path/to/blender    # the real thing
 python3 tests/headless/run.py --case mesh                   # one case file
 ```
@@ -99,8 +100,10 @@ real assets: mmd_tools bone morph data, VRM meshes and Source Engine rigs.
 
 CI runs both against Blender 5.0, 5.1 and 5.2, builds the extension and keeps the zip as an
 artifact. Pushing a tag like `1.0.0` runs the same checks, then publishes the zip to a
-release. `.github/actions/setup-blender` resolves the latest patch in a series and caches
-the tarball, so a warm run skips the 300MB download.
+release whose notes list the commits since the previous tag, grouped by conventional
+commit type, from `.github/scripts/release_notes.py`. `.github/actions/setup-blender`
+resolves the latest patch in a series and caches the tarball, so a warm run skips the
+300MB download.
 
 <h2 id="license">
   <img src="docs/sections/license.svg" alt="License" width="580">
