@@ -19,7 +19,14 @@ from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, St
 documents_folder = pathlib.Path.home() / "Documents"
 default_exports_dir = os.path.join(documents_folder, "Cats")
 
-def register(): 
+# Scene attribute names added by register(), filled in at the end of it
+_registered_properties = []
+
+
+def register():
+    global _registered_properties
+    attributes_before = set(dir(Scene))
+
     Scene.remove_rigidbodies_joints_global = BoolProperty(
         name=t('Scene.removerigidbodiesjointsglobal.label'),
         description=t('Scene.removerigidbodiesjointsglobal.desc'),
@@ -528,3 +535,13 @@ def register():
         description=t('Scene.debug_translations.desc'),
         default=False
     )
+
+    _registered_properties = sorted(set(dir(Scene)) - attributes_before)
+
+
+def unregister():
+    global _registered_properties
+    for name in _registered_properties:
+        if hasattr(Scene, name):
+            delattr(Scene, name)
+    _registered_properties = []

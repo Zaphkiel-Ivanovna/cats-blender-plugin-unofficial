@@ -63,13 +63,12 @@ from .tools.translations import t
 
 
 def check_unsupported_blender_versions():
-    # Don't allow Blender versions older than 4.5
+    # This build targets Blender 5.0 only. It runs first in register(), before
+    # anything is registered, so there is nothing to unregister on the way out.
     if bpy.app.version < (5, 0):
-        unregister()
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.29unsupportedVersion'))
-     
-    # Don't allow 5.0+
+
     if bpy.app.version >= (5, 1):
         sys.tracebacklimit = 0
         raise ImportError(t('Main.error.40unsupportedVersion'))
@@ -220,15 +219,17 @@ def unregister():
             pass
     print('Unregistered', count, 'CATS classes.')
 
+    # Unregister Scene types
+    extentions.unregister()
+
     # Unregister all dynamic buttons and icons
     tools.iconloader.unload_icons()
 
     # Remove shapekey button from shapekey menu
     try:
-        bpy.types.MESH_MT_shape_key_specials.remove(tools.shapekey.addToShapekeyMenu)
-    except AttributeError:
+        bpy.types.MESH_MT_shape_key_context_menu.remove(tools.shapekey.addToShapekeyMenu)
+    except (AttributeError, ValueError):
         print('shapekey button was not registered')
-        pass
 
     # Remove folder from sys path
     if file_dir in sys.path:
