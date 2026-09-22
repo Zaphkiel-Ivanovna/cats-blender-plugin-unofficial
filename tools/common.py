@@ -1280,59 +1280,27 @@ def sort_shape_keys(mesh_name, shape_key_order=None):
         if shape not in order:
             order.append(shape)
 
+    key_blocks = mesh.data.shape_keys.key_blocks
+    # Blender pins the reference key at index 0: shape_key_move never moves anything
+    # into or out of it, so key_blocks[0] stays put and sorting starts at index 1.
+    wanted = [name for name in order if name in key_blocks and key_blocks.find(name) > 0]
+    if not wanted:
+        mesh.active_shape_key_index = 0
+        return
+
     wm = bpy.context.window_manager
-    current_step = 0
-    wm.progress_begin(current_step, len(order))
+    wm.progress_begin(0, len(wanted))
 
-    # Calculate max iterations once to avoid repeated computation
-    max_iterations = len(mesh.data.shape_keys.key_blocks) + 5
-
-    i = 0
-    for name in order:
-        if name == 'Basis' and 'Basis' not in mesh.data.shape_keys.key_blocks:
-            i += 1
-            current_step += 1
-            wm.progress_update(current_step)
-            continue
-
-        for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
-            if shapekey.name == name:
-
-                mesh.active_shape_key_index = index
-                new_index = i
-                index_diff = (index - new_index)
-
-                if new_index >= len(mesh.data.shape_keys.key_blocks):
-                    bpy.ops.object.shape_key_move(type='BOTTOM')
-                    break
-
-                position_correct = False
-                iteration_count = 0
-                if 0 <= index_diff <= (new_index - 1):
-                    while position_correct is False and iteration_count < max_iterations:
-                        if mesh.active_shape_key_index != new_index:
-                            bpy.ops.object.shape_key_move(type='UP')
-                        else:
-                            position_correct = True
-                        iteration_count += 1
-                else:
-                    if mesh.active_shape_key_index > new_index:
-                        bpy.ops.object.shape_key_move(type='TOP')
-
-                    position_correct = False
-                    iteration_count = 0
-                    while position_correct is False and iteration_count < max_iterations:
-                        if mesh.active_shape_key_index != new_index:
-                            bpy.ops.object.shape_key_move(type='DOWN')
-                        else:
-                            position_correct = True
-                        iteration_count += 1
-
-                i += 1
-                break
-
-        current_step += 1
-        wm.progress_update(current_step)
+    # 'TOP' moves the active key to index 1, so walking the list backwards and sending
+    # each key to the top leaves them at 1, 2, 3... in order, while keys that aren't
+    # listed keep their relative order below. That is one operator call per key. The
+    # previous version stepped each key up a position at a time inside a while loop
+    # bounded by len(key_blocks) + 5, so it issued on the order of n^2 calls, most of
+    # them no-ops, and each one pushes an undo step and tags the depsgraph.
+    for step, name in enumerate(reversed(wanted), start=1):
+        mesh.active_shape_key_index = key_blocks.find(name)
+        bpy.ops.object.shape_key_move(type='TOP')
+        wm.progress_update(step)
 
     mesh.active_shape_key_index = 0
 
