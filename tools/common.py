@@ -7,21 +7,13 @@ import bmesh
 import numpy as np
 
 from bpy.types import (
-    Key,
     ShapeKey,
-    AnimData,
-    Context,
     Object,
-    Mesh,
-    Node,
-    NodeLink,
     ShaderNodeTexImage,
     ShaderNodeGroup,
 )
 
-from math import degrees
 from mathutils import Vector
-from datetime import datetime
 from html.parser import HTMLParser
 from functools import lru_cache
 from html.entities import name2codepoint
@@ -1586,10 +1578,6 @@ class ShowError(bpy.types.Operator):
                     row.label(text=line, icon_value=Iconloader.preview_collections["custom_icons"]["empty"].icon_id)
 
 
-def has_shapekeys(mesh_obj: Object) -> bool:
-    return mesh_obj.data.shape_keys is not None
-
-
 def _get_shape_key_co(shape_key: ShapeKey) -> np.ndarray:
     co = np.empty(len(shape_key.data) * 3, dtype=np.float32)
     shape_key.data.foreach_get('co', co)
@@ -1700,6 +1688,7 @@ def has_shapekeys(mesh):
     if not hasattr(mesh.data, 'shape_keys'):
         return False
     return hasattr(mesh.data.shape_keys, 'key_blocks')
+
 
 
 def ui_refresh():
