@@ -17,8 +17,6 @@ check("bpy.props returns _PropertyDeferred", type(prop).__name__, "_PropertyDefe
 check("_PropertyDeferred exposes .function", prop.function is bpy.props.PointerProperty, True)
 check("_PropertyDeferred exposes .keywords", prop.keywords.get("type") is bpy.types.Object, True)
 
-# shape_key_move('TOP') targets index 1 and never displaces the reference key.
-# tools.common.sort_shape_keys depends on exactly this.
 bpy.ops.mesh.primitive_cube_add()
 ob = bpy.context.object
 for name in ("Basis", "A", "B", "C"):

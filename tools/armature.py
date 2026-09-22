@@ -788,9 +788,6 @@ class FixArmature(bpy.types.Operator):
                 name2 = names[2].replace('\\Left', 'Right').replace('\\left', 'right').replace('\\L', 'R').replace('\\l', 'r')
             conflicting_bones.append((names0, name1, name2))
 
-        # Index the bones by lowercase name once. These lookups used to be linear
-        # scans over every edit bone with .lower() recomputed on both sides, run
-        # once per candidate name.
         bone_lookup = {}
         for bone_tmp in armature.data.edit_bones:
             bone_lookup.setdefault(bone_tmp.name.lower(), bone_tmp)
@@ -810,7 +807,6 @@ class FixArmature(bpy.types.Operator):
         for bone in armature.data.edit_bones:
             bone.name = bone.name.replace('.', '_')
 
-        # Names were rewritten just above, so rebuild the index
         bone_lookup = {}
         for bone_tmp in armature.data.edit_bones:
             bone_lookup.setdefault(bone_tmp.name.lower(), bone_tmp)

@@ -998,10 +998,7 @@ def prepare_separation(mesh):
 
 def clean_shapekeys(mesh):
     if has_shapekeys(mesh):
-        # Cached for this call only. Nearly every key block shares the same
-        # relative key, so without this its coordinates are read once per block.
         co_getter = lru_cache(maxsize=None)(_get_shape_key_co)
-        # Snapshot: shape_key_remove mutates the collection being walked
         for kb in list(mesh.data.shape_keys.key_blocks):
             if can_remove_shapekey(kb, co_getter):
                 mesh.shape_key_remove(kb)

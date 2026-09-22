@@ -12,8 +12,6 @@ from _harness import check, clear_scene, done, enable, module
 enable()
 Common = module("tools.common")
 
-# get_meshes_objects(visible_only=True) used to filter a list while walking it,
-# so it let every second hidden mesh through.
 clear_scene()
 armature_data = bpy.data.armatures.new("A")
 armature = bpy.data.objects.new("A", armature_data)
@@ -30,8 +28,6 @@ visible = Common.get_meshes_objects(armature_name=armature.name, mode=0,
 check("visible_only returns no hidden mesh", [o.name for o in visible if Common.is_hidden(o)], [])
 check("visible_only returns every visible mesh", len(visible), 2)
 
-# sort_material_slots must be stable, keep each face on its own material,
-# and be a no-op the second time.
 clear_scene()
 bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=4)
 ob = bpy.context.object
@@ -57,7 +53,6 @@ once = [s.material.name for s in ob.material_slots]
 Common.sort_material_slots(ob)
 check("sorting twice changes nothing", [s.material.name for s in ob.material_slots], once)
 
-# can_remove_shapekey: a key identical to its relative can go, a moved one cannot.
 clear_scene()
 bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3)
 ob = bpy.context.object
@@ -68,7 +63,6 @@ moved.data[3].co.z += 0.01
 check("an identical shape key is removable", Common.can_remove_shapekey(same), True)
 check("a moved shape key is kept", Common.can_remove_shapekey(moved), False)
 
-# NaN UVs are repaired across the whole layer, final loop included.
 uv = ob.data.uv_layers.new(name="UVTest")
 count = len(uv.data)
 for i in (0, count // 2, count - 1):

@@ -14,8 +14,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Keep in step with blender_version_min / blender_version_max in
-        # blender_manifest.toml
         blender: ["5.0", "5.1"]
 
     steps:

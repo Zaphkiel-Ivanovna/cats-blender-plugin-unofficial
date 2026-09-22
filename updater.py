@@ -440,9 +440,6 @@ def get_github_releases(repo):
     if not data:
         return False
     
-    # Releases are tagged <blender major>.<blender minor>.<cats major>.<cats minor>,
-    # e.g. 5.0.3.1 for Blender 5.0, so only the ones built for the running Blender
-    # are candidates.
     tag_prefix = f"{BLENDER_VERSION[0]}.{BLENDER_VERSION[1]}."
 
     for version in data:
@@ -450,9 +447,6 @@ def get_github_releases(repo):
         if not full_tag or not full_tag.startswith(tag_prefix):
             continue
 
-        # Keep the tag whole. CATS_VERSION carries the same four components, so the
-        # two compare directly; stripping the prefix here left check_for_update_available
-        # comparing [3, 1] against [5, 0, 2, 2], which is never greater.
         version_list[full_tag] = [
             version['zipball_url'],
             version['body'],
