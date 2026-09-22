@@ -749,21 +749,22 @@ class FixArmature(bpy.types.Operator):
             for bone in armature.data.edit_bones:
                 bone.layers[0] = True
         else:
-            # For Blender 4.0+, use bone collections
+            # For Blender 4.0+, use bone collections.
+            # Every collection was removed further up, so there is never one to find
+            # here. The `if bone_collections:` guard that used to wrap this block was
+            # therefore always false and left every bone unassigned.
             bone_collections = armature.data.collections
-            if bone_collections:
-                # The default collection on new Armatures is called "Bones" and usually has all bones assigned to it.
-                default_collection_name = "Bones"
-                bone_collection = bone_collections.get(default_collection_name)
-                if bone_collection is None:
-                    # The default "Bones" collection does not exist, create it.
-                    bone_collection = bone_collections.new(default_collection_name)
-                # Ensure the collection is visible.
-                bone_collection.is_visible = True
-                
-                # Assign all bones to the default collection
-                for bone in armature.data.edit_bones:
-                    bone_collection.assign(bone)
+            # The default collection on new Armatures is called "Bones" and usually has all bones assigned to it.
+            default_collection_name = "Bones"
+            bone_collection = bone_collections.get(default_collection_name)
+            if bone_collection is None:
+                bone_collection = bone_collections.new(default_collection_name)
+            # Ensure the collection is visible.
+            bone_collection.is_visible = True
+
+            # Assign all bones to the default collection
+            for bone in armature.data.edit_bones:
+                bone_collection.assign(bone)
         
         for bone in armature.data.edit_bones:
             if bone.name in Bones.bone_list or bone.name.startswith(tuple(Bones.bone_list_with)):
