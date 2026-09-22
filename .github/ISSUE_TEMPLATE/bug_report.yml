@@ -1,0 +1,89 @@
+name: Bug report
+description: Something in Cats does not work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cats reshapes armatures and meshes, so a report without the model is usually
+        impossible to act on. If you cannot share the model, say so and describe the rig
+        instead: bone naming, mesh count, where it came from.
+
+  - type: input
+    id: blender
+    attributes:
+      label: Blender version
+      description: From Help > About Blender, for example 5.1.2.
+      placeholder: "5.1.2"
+    validations:
+      required: true
+
+  - type: input
+    id: cats
+    attributes:
+      label: Cats version
+      description: From the Cats panel header, or the version you installed.
+      placeholder: "5.0.2.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where the model came from
+      options:
+        - MMD (PMX/PMD)
+        - FBX
+        - XNALara
+        - Mixamo
+        - Source Engine
+        - Unreal Engine
+        - DAZ / Poser
+        - Blender Rigify
+        - VRM
+        - Built by hand
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: input
+    id: feature
+    attributes:
+      label: Which part of Cats
+      description: The panel and button, for example "Fix Model" or "Optimization > Atlas".
+      placeholder: "Fix Model"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: |
+        Window > Toggle System Console on Windows, or start Blender from a terminal on
+        macOS and Linux. Paste the whole traceback, not the last line.
+      render: text
+
+  - type: textarea
+    id: model
+    attributes:
+      label: Model
+      description: |
+        Attach a .blend that reproduces it, or a link. Strip it down if you can: one
+        armature and the meshes involved is usually enough.

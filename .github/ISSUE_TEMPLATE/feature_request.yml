@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest something Cats should do
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: Describe the work you are doing by hand today, not the feature you imagine.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like Cats to do
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: Other add-ons, manual steps, or a different Cats feature that almost fits.

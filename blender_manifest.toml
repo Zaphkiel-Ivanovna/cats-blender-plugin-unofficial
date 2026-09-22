@@ -29,4 +29,7 @@ paths_exclude_pattern = [
   "/.gitignore",
   "/.gitmodules",
   "/extern_tools/google_trans_new/test.txt",
+  "/CODE_OF_CONDUCT.md",
+  "/CONTRIBUTING.md",
+  "/SECURITY.md",
 ]

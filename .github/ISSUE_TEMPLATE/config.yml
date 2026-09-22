@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Upstream Cats
+    url: https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-/issues
+    about: This is a fork targeting Blender 5.x. If the problem is not specific to 5.x, report it upstream.
+  - name: Cats wiki
+    url: https://github.com/teamneoneko/Cats-Blender-Plugin-Unofficial-/wiki
+    about: Feature documentation and the UI guide.

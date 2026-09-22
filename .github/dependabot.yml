@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "⬆️ ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The composite action pins actions too, and Dependabot does not find it from /
+  - package-ecosystem: github-actions
+    directory: /.github/actions/setup-blender
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "⬆️ ci"
+
+  - package-ecosystem: pip
+    directory: /tests
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "⬆️ test"
