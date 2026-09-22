@@ -6,10 +6,8 @@ import shutil
 import pathlib
 import zipfile
 import requests
-import addon_utils
 from threading import Thread
 from collections import OrderedDict
-from bpy.app.handlers import persistent
 from .tools.translations import t
 from .tools.common import wrap_dynamic_enum_items
 from . import CATS_VERSION, dev_branch
@@ -40,11 +38,8 @@ resources_dir = os.path.join(main_dir, "resources")
 ignore_ver_file = os.path.join(resources_dir, "ignore_version.txt")
 no_auto_ver_check_file = os.path.join(resources_dir, "no_auto_ver_check.txt")
 
-# Get package name, important for panel in user preferences
-package_name = ''
-for mod in addon_utils.modules():
-    if mod.bl_info['name'] == 'Cats Blender Plugin':
-        package_name = mod.__name__
+# Package name of this add-on, used as the AddonPreferences bl_idname
+package_name = __package__
 
 # Icons for UI
 ICON_URL = 'URL'
@@ -500,48 +495,31 @@ def finish_update_checking(error=''):
     ui_refresh()
 
 
+def _tag_areas_for_redraw():
+    for window_manager in bpy.data.window_managers:
+        for window in window_manager.windows:
+            for area in window.screen.areas:
+                area.tag_redraw()
+    return None
+
+
 def ui_refresh():
-    # A way to refresh the ui
-    refreshed = False
-    while not refreshed:
-        if hasattr(bpy.data, 'window_managers'):
-            for windowManager in bpy.data.window_managers:
-                for window in windowManager.windows:
-                    for area in window.screen.areas:
-                        area.tag_redraw()
-            refreshed = True
-            # print('Refreshed UI')
-        else:
-            time.sleep(0.5)
-
-
-def get_update_post():
-    if hasattr(bpy.app.handlers, 'scene_update_post'):
-        return bpy.app.handlers.scene_update_post
-    else:
-        return bpy.app.handlers.depsgraph_update_post
+    # tag_redraw touches window data, so it has to run on the main thread.
+    # bpy.app.timers.register is the one bpy call that is safe from a worker thread.
+    bpy.app.timers.register(_tag_areas_for_redraw)
 
 
 def prepare_to_show_update_notification():
-    # This is necessary to show a popup directly after startup
-    # You will get a nasty error otherwise
-    # This will add the function to the scene_update_post and it will be executed every frame. that's why it needs to be removed again asap
-    # print('PREPARE TO SHOW UI')
-    if show_update_notification not in get_update_post():
-        get_update_post().append(show_update_notification)
+    # Called from the update-check thread. bpy.app.timers.register is safe to call
+    # from any thread and runs the callback on the main thread, which is the only
+    # place a popup operator can be invoked from.
+    bpy.app.timers.register(show_update_notification, first_interval=0.1)
 
 
-@persistent
-def show_update_notification(scene):  # One argument in necessary for some reason
-    # print('SHOWING UI NOW!!!!')
-
-    # # Immediately remove this from handlers again
-    if show_update_notification in get_update_post():
-        get_update_post().remove(show_update_notification)
-
-    # Show notification popup
+def show_update_notification():
     atr = UpdateNotificationPopup.bl_idname.split(".")
     getattr(getattr(bpy.ops, atr[0]), atr[1])('INVOKE_DEFAULT')
+    return None
 
 
 def update_now(version=None, latest=False, dev=False):
@@ -1008,4 +986,5 @@ def unregister():
     if hasattr(bpy.types.Scene, 'cats_updater_version_list'):
         del bpy.types.Scene.cats_updater_version_list
 
-        del bpy.types.Scene.cats_updater_version_list
+    if hasattr(bpy.types.Scene, 'cats_update_action'):
+        del bpy.types.Scene.cats_update_action
