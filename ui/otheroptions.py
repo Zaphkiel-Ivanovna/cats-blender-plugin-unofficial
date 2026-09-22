@@ -6,7 +6,6 @@ from .. import globs
 from .main import ToolPanel
 from .main import layout_split, add_button_with_small_button
 from ..tools import translate as Translate
-from ..tools import common as Common
 from ..tools import armature_manual as Armature_manual
 from ..tools import shapekey as Shapekey
 from ..tools.register import register_wrap

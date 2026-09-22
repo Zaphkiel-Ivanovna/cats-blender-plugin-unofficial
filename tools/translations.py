@@ -12,7 +12,7 @@ from .register import register_wrap
 
 bundled_translations_dir = globs.resource_path("translations")
 
-dictionary: dict[str, str] = dict()
+dictionary: dict[str, str] = {}
 languages = []
 verbose = True
 last_loaded_language = None
@@ -54,7 +54,7 @@ def load_translations(override_language=None):
     if _addon_startup_time is None:
         _addon_startup_time = time.time()
 
-    dictionary = dict()
+    dictionary = {}
 
     print("Loading translations")
 
@@ -65,7 +65,7 @@ def load_translations(override_language=None):
         language = get_language_from_settings()
         print(f"Selected language: {language}")
 
-    languages = ["auto"] + list_language_codes()
+    languages = ["auto", *list_language_codes()]
     print(f"Available languages: {languages}")
 
     language_to_load = language if language and language in languages else None

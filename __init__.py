@@ -40,7 +40,6 @@ else:
     importlib.reload(ui)
     importlib.reload(extentions)
 
-from .tools import translations
 from .tools.translations import t
 
 
@@ -84,7 +83,7 @@ def register():
         tools.settings.load_settings()
     except FileNotFoundError:
         sys.tracebacklimit = 0
-        raise ImportError(t('Main.error.restartAndEnable_alt'))
+        raise ImportError(t('Main.error.restartAndEnable_alt')) from None
 
 
     try:
@@ -142,13 +141,10 @@ def unregister():
         mmd_tools_local.unregister()
     except NameError:
         print('mmd_tools_local was not registered')
-        pass
     except AttributeError:
         print('Could not unregister local mmd_tools_local')
-        pass
     except ValueError:
         print('mmd_tools_local was not registered')
-        pass
 
     if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
         import imscale.immersive_scaler as imscale

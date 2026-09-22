@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy
-from _harness import check, done, enable, module, PACKAGE
+from _harness import check, done, enable, PACKAGE
 
 cats = enable()
 check("register succeeded", PACKAGE in bpy.context.preferences.addons, True)

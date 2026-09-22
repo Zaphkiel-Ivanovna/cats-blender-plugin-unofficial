@@ -7,7 +7,7 @@ import json
 import math
 import bmesh
 import mathutils
-from typing import Optional, Dict, Tuple, Set
+from typing import Optional, Dict, Tuple
 
 from collections import OrderedDict
 from random import random
@@ -45,7 +45,7 @@ class EyeTrackingBackup:
                 json.dump(self.bone_positions, f)
             return True
         except Exception as e:
-            print(f"Backup failed: {str(e)}")
+            print(f"Backup failed: {e!s}")
             return False
             
     def restore_bone_positions(self, armature) -> bool:
@@ -66,7 +66,7 @@ class EyeTrackingBackup:
                     
             return True
         except Exception as e:
-            print(f"Restore failed: {str(e)}")
+            print(f"Restore failed: {e!s}")
             return False
 
 class EyeTrackingValidator:
@@ -233,7 +233,7 @@ class RotateEyeBonesForAv3Button(bpy.types.Operator):
 
             matrix_iter = chain.from_iterable(getattr(bone, matrix_attribute).to_3x3())
             expected_matrix_iter = chain.from_iterable(straight_up_and_zero_roll)
-            for bone_val, expected_val in zip(matrix_iter, expected_matrix_iter):
+            for bone_val, expected_val in zip(matrix_iter, expected_matrix_iter, strict=True):
                 if not math.isclose(bone_val, expected_val, rel_tol=1e-6, abs_tol=1e-6):
                     matrix_close_enough = False
                     break
@@ -448,7 +448,7 @@ class CreateEyesButton(bpy.types.Operator):
             return {'FINISHED'}
 
         except Exception as e:
-            self.report({'ERROR'}, f"Setup failed: {str(e)}")
+            self.report({'ERROR'}, f"Setup failed: {e!s}")
             if backup.restore_bone_positions(Common.get_armature()):
                 self.report({'WARNING'}, "Restored from backup")
             wm.progress_end()
@@ -497,7 +497,7 @@ class CreateEyesButton(bpy.types.Operator):
             try:
                 self.mesh.vertex_groups[bone_name].weight(i)
                 return True
-            except:
+            except Exception:
                 pass
 
         return False
@@ -523,7 +523,7 @@ def fix_eye_position(context, old_eye, new_eye, head, right_side):
             print(length)
 
 
-    x_cord, y_cord, z_cord, fbx = Common.get_bone_orientations(Common.get_armature())
+    x_cord, y_cord, z_cord, _fbx = Common.get_bone_orientations(Common.get_armature())
 
     if context.scene.disable_eye_movement:
         if head is not None:
@@ -577,7 +577,7 @@ def repair_shapekeys(mesh_name, vertex_group):
     print('DEBUG: Repairing shapes!')
     moved = False
     i = 0
-    for key in bm.verts.layers.shape.keys():
+    for key in bm.verts.layers.shape:
         if not key.startswith('vrc.'):
             continue
         print('DEBUG: Repairing shape: ' + key)
@@ -624,7 +624,7 @@ def repair_shapekeys_mouth(mesh_name):
     bm.verts.ensure_lookup_table()
 
     moved = False
-    for key in bm.verts.layers.shape.keys():
+    for key in bm.verts.layers.shape:
         if not key.startswith('vrc'):
             continue
         value = bm.verts.layers.shape.get(key)

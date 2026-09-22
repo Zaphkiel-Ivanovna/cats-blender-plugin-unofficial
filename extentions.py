@@ -4,7 +4,6 @@ import pathlib
 
 from .tools import common as Common
 from .tools.common import wrap_dynamic_enum_items
-from .tools import atlas as Atlas
 from .tools import eyetracking as Eyetracking
 from .tools import rootbone as Rootbone
 from .tools import settings as Settings

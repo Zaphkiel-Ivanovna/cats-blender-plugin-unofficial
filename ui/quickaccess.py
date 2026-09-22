@@ -6,11 +6,9 @@ from .. import globs
 from .. import updater
 from .main import ToolPanel, draw_info_box, draw_error_box
 from ..tools import common as Common
-from ..tools import armature as Armature
 from ..tools import importer as Importer
 from ..tools import iconloader as Iconloader
 from ..tools import material as Material
-from ..tools import eyetracking as Eyetracking
 from ..tools import armature_manual as Armature_manual
 from ..tools.register import register_wrap
 from ..tools.translations import t

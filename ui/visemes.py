@@ -1,7 +1,7 @@
 # MIT License
 
 import bpy
-from .main import ToolPanel, SearchMenuOperatorBase, draw_error_box
+from .main import ToolPanel, draw_error_box
 from ..tools import common as Common
 from ..tools import viseme as Viseme
 from ..tools.register import register_wrap

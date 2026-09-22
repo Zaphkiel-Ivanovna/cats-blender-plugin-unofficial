@@ -124,7 +124,7 @@ class ShapeKeyApplier(bpy.types.Operator):
             if restore_data:
                 mutes = restore_data.get('mutes')
                 if mutes:
-                    for mute, shape in zip(mutes, obj_with_shapes.data.shape_keys.key_blocks):
+                    for mute, shape in zip(mutes, obj_with_shapes.data.shape_keys.key_blocks, strict=False):
                         shape.mute = mute
                 show_only_shape_key = restore_data.get('show_only_shape_key')
                 if show_only_shape_key is not None:

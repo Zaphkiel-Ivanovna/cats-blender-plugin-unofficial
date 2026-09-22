@@ -2,11 +2,10 @@
 
 import bpy
 import webbrowser
-from typing import List, Optional, Dict, Set, Tuple, Union
+from typing import List, Optional, Tuple
 from mathutils import Vector
 
 from . import common as Common
-from . import armature_bones as Bones
 from .register import register_wrap
 from .translations import t
 
@@ -293,8 +292,8 @@ def calculate_bone_orientation(mesh, vertices):
         return Vector((0, 0, 0.1)), 0.0
         
     coords = [mesh.data.vertices[v.index].co for v in vertices]
-    min_co = Vector(map(min, zip(*coords)))
-    max_co = Vector(map(max, zip(*coords)))
+    min_co = Vector(map(min, zip(*coords, strict=True)))
+    max_co = Vector(map(max, zip(*coords, strict=True)))
     dimensions = max_co - min_co
     
     roll_angle = 0.0
@@ -320,7 +319,7 @@ def validate_parents_and_transforms(merge_armature: bpy.types.Object, base_armat
     base_parent = base_armature.parent
     if merge_parent or base_parent:
         if context.scene.merge_same_bones:
-            for armature, parent in [(merge_armature, merge_parent), (base_armature, base_parent)]:
+            for _armature, parent in [(merge_armature, merge_parent), (base_armature, base_parent)]:
                 if parent:
                     if not is_transform_clean(parent):
                         Common.show_error(6.5, t('MergeArmature.error.checkTransforms'))
@@ -455,7 +454,7 @@ def merge_armatures(
                     original_parents[bone.name] = bone.parent.name
 
 
-    base_bone_names = set(bone.name for bone in base_armature.data.bones)
+    base_bone_names = {bone.name for bone in base_armature.data.bones}
 
     Common.unselect_all()
     Common.set_active(merge_armature)
@@ -623,7 +622,7 @@ def process_vertex_groups(meshes: List[bpy.types.Object]) -> None:
                 base_name = vg_name[:-6]
                 merge_groups[base_name] = (vg_name, vg)
         
-        for base_name, (merge_name, merge_vg) in merge_groups.items():
+        for base_name, (_merge_name, merge_vg) in merge_groups.items():
             base_vg = vertex_groups_by_name.get(base_name)
             
             if base_vg:

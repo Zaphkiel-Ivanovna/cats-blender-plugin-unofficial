@@ -4,8 +4,6 @@ import bpy
 from . import common as Common
 from .register import register_wrap
 from .translations import t
-from mmd_tools_local.operators import morph as Morph
-from . import armature as Armature
 mmd_tools_local_installed = True
 
 @register_wrap
@@ -49,14 +47,14 @@ class CombineMaterialsButton(bpy.types.Operator):
 
             if node.inputs:
                 node_data = [node.name]
-                for input in node.inputs:
-                    if hasattr(input, 'default_value'):
+                for node_input in node.inputs:
+                    if hasattr(node_input, 'default_value'):
                         try:
-                            node_data.append(str(tuple(input.default_value[:])))
+                            node_data.append(str(tuple(node_input.default_value[:])))
                         except TypeError:
-                            node_data.append(str(input.default_value))
+                            node_data.append(str(node_input.default_value))
                     else:
-                        node_data.append(input.name)
+                        node_data.append(node_input.name)
                 hash_components.append(''.join(node_data))
 
         return hash(''.join(hash_components))

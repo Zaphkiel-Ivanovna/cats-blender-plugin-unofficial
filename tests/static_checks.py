@@ -30,7 +30,8 @@ def check_compiles():
     """Every file parses, and none of them warns."""
     errors = []
     for path in sources():
-        text = io.open(path, encoding="utf-8").read()
+        with io.open(path, encoding="utf-8") as handle:
+            text = handle.read()
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always", SyntaxWarning)
             try:
@@ -88,7 +89,8 @@ def check_manifest():
     if not isinstance(manifest.get("permissions"), dict):
         errors.append("blender_manifest.toml: permissions must be a table with a reason per entry")
 
-    init = io.open(os.path.join(ROOT, "__init__.py"), encoding="utf-8").read()
+    with io.open(os.path.join(ROOT, "__init__.py"), encoding="utf-8") as handle:
+        init = handle.read()
     tree = ast.parse(init)
     gate = []
     for node in ast.walk(tree):

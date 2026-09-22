@@ -40,7 +40,7 @@ class RevertChangesButton(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        for setting in settings_default.keys():
+        for setting in settings_default:
             setattr(bpy.context.scene, setting, settings_data_unchanged.get(setting))
         save_settings()
         self.report({'INFO'}, t('RevertChangesButton.success'))
@@ -108,7 +108,7 @@ def load_settings():
             to_reset_settings.append(setting)
             print('RESET SETTING', setting)
 
-    for setting in settings_default.keys():
+    for setting in settings_default:
         if setting not in settings_data and setting not in to_reset_settings:
             to_reset_settings.append(setting)
             print('RESET SETTING', setting)
@@ -156,7 +156,7 @@ def reset_settings(full_reset=False, to_reset_settings=None):
 
     else:
         for setting in to_reset_settings:
-            if setting in settings_default.keys():
+            if setting in settings_default:
                 settings_data[setting] = settings_default[setting][0]
             else:
                 settings_data[setting] = None
@@ -178,7 +178,7 @@ def apply_settings():
 
     with settings_lock_context():
         settings_to_reset = []
-        for setting in settings_default.keys():
+        for setting in settings_default:
             try:
                 setattr(scene, setting, settings_data.get(setting))
             except (TypeError, AttributeError):
@@ -212,7 +212,7 @@ def update_settings_core(self, context):
         return settings_changed_tmp
 
     with settings_lock_context():
-        for setting in settings_default.keys():
+        for setting in settings_default:
             old = settings_data[setting]
             new = getattr(bpy.context.scene, setting)
             print(f"Checking setting: {setting}")

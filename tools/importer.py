@@ -1,7 +1,6 @@
 # MIT License
 
 import os
-import traceback
 import bpy
 import copy
 import zipfile
@@ -21,18 +20,14 @@ from . import settings as Settings
 from ..tools import iconloader as Iconloader
 from .register import register_wrap
 from .translations import t
-from mmd_tools_local.utils import makePmxBoneMap
-from mmd_tools_local.core.vmd import importer as vmd_importer
 from mmd_tools_local.translations import DictionaryEnum
-from mmd_tools_local import auto_scene_setup
 
 current_blender_version = str(bpy.app.version[:2])[1:-1].replace(', ', '.')
 
 mmd_tools_local_installed = False
 try:
-    import mmd_tools_local
     mmd_tools_local_installed = True
-except:
+except Exception:
     pass
 
 formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.zip'
@@ -435,7 +430,7 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             bpy.ops.cats_importer.enable_mmd('INVOKE_DEFAULT')
             return {'FINISHED'}
 
-        filename, extension = os.path.splitext(self.filepath)
+        _filename, extension = os.path.splitext(self.filepath)
 
         if(extension == ".vmd"):
 
@@ -484,15 +479,15 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
             bpy.ops.mmd_tools_local.import_vmd(filepath=self.filepath,bone_mapper='RENAMED_BONES',use_underscore=True, dictionary='INTERNAL')
 
-            if armature.animation_data == None :
+            if armature.animation_data is None :
                 armature.animation_data_create()
-            if armature.animation_data.action == None:
+            if armature.animation_data.action is None:
                 armature.animation_data.action = bpy.data.actions.new("MMD Animation")
 
 
-            if new_armature.animation_data == None :
+            if new_armature.animation_data is None :
                 new_armature.animation_data_create()
-            if new_armature.animation_data.action == None:
+            if new_armature.animation_data.action is None:
                 new_armature.animation_data.action = bpy.data.actions.new("EMPTY_SOURCE")
 
             active_obj = new_armature
@@ -781,11 +776,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             for collection in bpy.data.collections:
                 try:
                     collection.objects.unlink(newobj)
-                except:
+                except Exception:
                     pass
             try:
                 bpy.context.collection.objects.unlink(newobj)
-            except:
+            except Exception:
                 pass
             barneycollection.objects.link(newobj)
         bpy.context.collection.children.link(barneycollection)
@@ -805,21 +800,21 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             for collection in bpy.data.collections:
                 try:
                     collection.objects.unlink(obj)
-                except:
+                except Exception:
                     pass
             try:
                 bpy.context.collection.objects.unlink(obj)
-            except:
+            except Exception:
                 pass
             refcoll.objects.link(obj)
         for collection in bpy.data.collections:
             try:
                 collection.objects.unlink(armature)
-            except:
+            except Exception:
                 pass
         try:
             bpy.context.collection.objects.unlink(armature)
-        except:
+        except Exception:
             pass
         refcoll.objects.link(armature)
         bpy.context.collection.children.link(refcoll)
@@ -926,7 +921,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         print("positioning bones for barney armature at your armature's bones PLEASE HAVE A PELVIS BONE")
         barney_pose_bone_names = [j.name for j in children_bone_recursive(barney_armature.pose.bones["ValveBiped.Bip01_Pelvis"])]
 
-        armature_matrixes = dict()
+        armature_matrixes = {}
         barney_armature_name = barney_armature.name
         body_armature_name = body_armature.name
         for barney_bone_name in barney_pose_bone_names:
@@ -945,7 +940,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 newmatrix = Matrix.Translation((editbone.matrix[0][3],editbone.matrix[1][3],editbone.matrix[2][3]))
                 bone.matrix = newmatrix
                 bone.rotation_euler = (0,0,0)
-            except:
+            except Exception:
                 Common.switch('OBJECT')
 
         print("applying barney pose as rest pose")
@@ -972,11 +967,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for collection in bpy.data.collections:
             try:
                 collection.objects.unlink(bpy.data.objects[body_armature_name])
-            except:
+            except Exception:
                 pass
         try:
             bpy.context.collection.objects.unlink(bpy.data.objects[body_armature_name])
-        except:
+        except Exception:
             pass
         refcoll.objects.link(bpy.data.objects[body_armature_name])
 
@@ -994,11 +989,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for obj in context.selected_objects:
             try:
                 refcoll.objects.unlink(obj)
-            except:
+            except Exception:
                 pass
             try:
                 bpy.context.collection.objects.unlink(obj)
-            except:
+            except Exception:
                 pass
             physcoll.objects.link(obj)
 
@@ -1015,11 +1010,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for obj in context.selected_objects:
             try:
                 refcoll.objects.unlink(obj)
-            except:
+            except Exception:
                 pass
             try:
                 bpy.context.collection.objects.unlink(obj)
-            except:
+            except Exception:
                 pass
             armcoll.objects.link(obj)
 
@@ -1043,7 +1038,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         "ValveBiped.Bip01_Neck1",
         "ValveBiped.Bip01_Head1"
         ]
-        convexobjects = dict()
+        convexobjects = {}
         original_object_phys = None
         phys_armature = None
         for obj in physcoll.objects:
@@ -1070,7 +1065,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                         obj.vertex_groups.active_index = index
                         bpy.ops.object.vertex_group_select()
                         bpy.ops.object.vertex_group_remove_from()
-                    elif not (group.name in bone_names_for_phys):
+                    elif group.name not in bone_names_for_phys:
                         Common.switch('OBJECT')
                         Common.unselect_all()
                         Common.set_active(phys_armature)
@@ -1110,7 +1105,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                                 obj.vertex_groups.active_index = index
                                 bpy.ops.object.vertex_group_select()
                                 break
-                    except:
+                    except Exception:
                         print("failed to find vertex group "+bone+" On phys obj. Skipping.")
                         continue
                     try:
@@ -1143,7 +1138,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         for bonename,obj in convexobjects.items():
             Common.select(obj,True)
         print("if this doesn't work, then you have bad weights!!")
-        Common.set_active(list(convexobjects.values())[0])
+        Common.set_active(next(iter(convexobjects.values())))
         bpy.ops.object.join()
         Common.unselect_all()
         Common.set_active(original_object_phys)
@@ -1205,7 +1200,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                             obj.vertex_groups.active_index = index
                             bpy.ops.object.vertex_group_select()
                             break
-                except:
+                except Exception:
                     print("failed to find vertex group "+bone+" On arms. Skipping.")
                     continue
             bpy.ops.mesh.delete(type='VERT')
@@ -1234,7 +1229,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 bone.select_head = True
                 bone.select_tail = True
                 arms_armature.data.edit_bones.active = bone
-            if bone.name == "ValveBiped.Bip01_Spine1" and chestloc == None:
+            if bone.name == "ValveBiped.Bip01_Spine1" and chestloc is None:
                 chestloc = (bone.matrix[0][3],bone.matrix[1][3],bone.matrix[2][3])
             if bone.name == "ValveBiped.Bip01_Spine2":
                 chestloc = (bone.matrix[0][3],bone.matrix[1][3],bone.matrix[2][3])
@@ -1459,9 +1454,8 @@ $sequence \"proportions\"{
         print("writing body script file iteration 1. If this errors, please save your file!")
         target_dir = bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/")
         os.makedirs(target_dir,0o777,True)
-        compilefile = open(target_dir+sanitized_model_name+".qc", "w")
-        compilefile.write(qcfile.replace("{put_anims_here}","").replace("{put define bones here}",""))
-        compilefile.close()
+        with open(target_dir+sanitized_model_name+".qc", "w") as compilefile:
+            compilefile.write(qcfile.replace("{put_anims_here}","").replace("{put define bones here}",""))
 
         print("configuring export path for body. If this throws an error, save your file!!")
         bpy.context.scene.vs.export_path = "//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/"
@@ -1521,7 +1515,7 @@ $sequence \"proportions\"{
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except Exception:
                 pass
             body_armature.animation_data.action = bpy.data.actions["idle"]
         else:
@@ -1529,7 +1523,7 @@ $sequence \"proportions\"{
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except Exception:
                 pass
             body_armature.animation_data.action = bpy.data.actions.new(name="idle")
 
@@ -1607,16 +1601,14 @@ $sequence \"proportions\"{
         output = subprocess.run([steam_librarypath+"/bin/studiomdl.exe", "-game", steam_librarypath+"/garrysmod", "-definebones", "-nop4", "-verbose", bpy.path.abspath(bpy.context.scene.vs.qc_path)],stdout=subprocess.PIPE)
 
         print("Writing DefineBones.qci")
-        define_bones_file = open(bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/DefineBones.qci"), "w")
         index = output.stdout.decode('utf-8').find('$')
-        define_bones_file.write(output.stdout.decode('utf-8')[index:])
-        define_bones_file.close()
+        with open(bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/DefineBones.qci"), "w") as define_bones_file:
+            define_bones_file.write(output.stdout.decode('utf-8')[index:])
 
 
         print("Rewriting QC to include animations since we finished compiling define bones")
-        compilefile = open(bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/"+sanitized_model_name+".qc"), "w")
-        compilefile.write(qcfile.replace("{put_anims_here}",body_animation_qc).replace("{put define bones here}","$include \"DefineBones.qci\""))
-        compilefile.close()
+        with open(bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/"+sanitized_model_name+".qc"), "w") as compilefile:
+            compilefile.write(qcfile.replace("{put_anims_here}",body_animation_qc).replace("{put define bones here}","$include \"DefineBones.qci\""))
 
         print("Compiling model! (THIS CAN TAKE A LONG TIME AND IS PRONE TO ERRORS!!!!)")
         bpy.ops.smd.compile_qc(filepath=bpy.path.abspath(bpy.context.scene.vs.qc_path))
@@ -1635,12 +1627,11 @@ $sequence \"proportions\"{
 
         print("Making lua file for adding playermodel to playermodel list in game")
         os.makedirs(addonpath+"lua/autorun", exist_ok=True)
-        luafile = open(addonpath+"lua/autorun/"+sanitized_model_name+"_playermodel_adder.lua","w")
         luafile_content = """player_manager.AddValidModel( \""""+offical_model_name+"""\", \""""+"models/"+sanitized_model_name+"/"+sanitized_model_name+""".mdl\" );
 list.Set( "PlayerOptionsModel", \""""+offical_model_name+"""\", \""""+"models/"+sanitized_model_name+"/"+sanitized_model_name+""".mdl\");
 player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sanitized_model_name+"/"+sanitized_model_name+"""_arms.mdl\", 0, "00000000" );"""
-        luafile.write(luafile_content)
-        luafile.close()
+        with open(addonpath+"lua/autorun/"+sanitized_model_name+"_playermodel_adder.lua","w") as luafile:
+            luafile.write(luafile_content)
 
         print("resizing arms")
 
@@ -1709,7 +1700,7 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except Exception:
                 pass
             body_armature.animation_data.action = bpy.data.actions["idle_arms"]
         else:
@@ -1717,7 +1708,7 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
             Common.set_active(body_armature)
             try:
                 body_armature.animation_data_create()
-            except:
+            except Exception:
                 pass
             body_armature.animation_data.action = bpy.data.actions.new(name="idle_arms")
 
@@ -1774,9 +1765,8 @@ $Sequence \"idle\" {
     fps 1
 }"""
         print("writing qc file for arms. If this errors, please save your file!")
-        compilefile = open(bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"_arms/"+sanitized_model_name+"_arms.qc"), "w")
-        compilefile.write(qcfile)
-        compilefile.close()
+        with open(bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"_arms/"+sanitized_model_name+"_arms.qc"), "w") as compilefile:
+            compilefile.write(qcfile)
 
         print("Compiling arms model! (THIS CAN TAKE A LONG TIME AND IS PRONE TO ERRORS!!!!)")
         bpy.ops.smd.compile_qc(filepath=bpy.path.abspath(bpy.context.scene.vs.qc_path))
@@ -1864,7 +1854,7 @@ class ExportModel(bpy.types.Operator):
     def execute(self, context):
         meshes = Common.get_meshes_objects_for_export()
 
-        if not self.action == 'NO_CHECK':
+        if self.action != 'NO_CHECK':
             global _meshes_count, _tris_count, _mat_list, _broken_shapes, _textures_found, _eye_meshes_not_named_body
 
             _meshes_count = 0
@@ -1914,7 +1904,7 @@ class ExportModel(bpy.types.Operator):
                     or _tris_count > max_tris \
                     or len(_mat_list) > max_mats \
                     or len(_broken_shapes) > 0 \
-                    or not _textures_found and Settings.get_embed_textures()\
+                    or (not _textures_found and Settings.get_embed_textures())\
                     or len(_eye_meshes_not_named_body) > 0:
                 bpy.ops.cats_importer.display_error('INVOKE_DEFAULT')
                 return {'FINISHED'}
@@ -2047,7 +2037,7 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
         except Exception as e:
             import traceback
             err_msg = traceback.format_exc()
-            self.report({'ERROR'}, f"Error importing animation: {str(e)}")
+            self.report({'ERROR'}, f"Error importing animation: {e!s}")
             print(err_msg)
             return {'CANCELLED'}
 

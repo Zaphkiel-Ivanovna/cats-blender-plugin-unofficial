@@ -10,7 +10,7 @@ from collections import OrderedDict
 from .tools.translations import t
 from .tools.common import wrap_dynamic_enum_items
 from . import globs
-from . import CATS_VERSION, dev_branch
+from . import CATS_VERSION
 
 no_ver_check = False
 fake_update = False
@@ -480,7 +480,7 @@ def check_for_update_available():
 
     global latest_version, latest_version_str
     latest_version = []
-    for version in version_list.keys():
+    for version in version_list:
         parsed = parse_version(version)
         if parsed > latest_version:
             latest_version = parsed
@@ -660,7 +660,7 @@ def check_ignored_version():
 def get_version_list(self, context):
     choices = []
     if version_list:
-        for version in version_list.keys():
+        for version in version_list:
             choices.append((version, version, version))
 
     return choices
@@ -771,7 +771,7 @@ def draw_updater_panel(context, layout, user_preferences=False):
     split = col.row(align=True)
     row = layout_split(split, factor=0.55, align=True)
     row.scale_y = scale_small
-    row.active = True if not is_checking_for_update and version_list else False
+    row.active = bool(not is_checking_for_update and version_list)
     row.operator(UpdateToSelectedButton.bl_idname, text=t('draw_updater_panel.UpdateToSelectedButton.label'))
     row.prop(context.scene, 'cats_updater_version_list', text='')
     row = split.row(align=True)

@@ -152,7 +152,6 @@ def start_pose_mode(reset_pose=True):
     if bpy.context.active_object and bpy.context.active_object.mode == 'EDIT' and bpy.context.active_object.type == 'ARMATURE' and len(
             bpy.context.selected_editable_bones) > 0:
         current = bpy.context.selected_editable_bones[0].name
-        pass
 
     armature = Common.set_default_stage()
     Common.remove_rigidbodies_global()
@@ -439,7 +438,7 @@ class PoseToRest(bpy.types.Operator):
         for mod in mods_to_reenable_viewport:
             mod.show_viewport = True
         mesh_obj.modifiers.remove(armature_mod)
-        for shape_key, vertex_group, mute in zip(me.shape_keys.key_blocks, shape_key_vertex_groups, shape_key_mutes):
+        for shape_key, vertex_group, mute in zip(me.shape_keys.key_blocks, shape_key_vertex_groups, shape_key_mutes, strict=True):
             shape_key.vertex_group = vertex_group
             shape_key.mute = mute
         mesh_obj.active_shape_key_index = old_active_shape_key_index
@@ -471,7 +470,7 @@ class JoinMeshes(bpy.types.Operator):
         Common.unselect_all()
         Common.set_active(mesh)
         
-        for i in range(0, 3):
+        for i in range(3):
             mesh.lock_location[i] = False
             mesh.lock_rotation[i] = False
             mesh.lock_scale[i] = False
@@ -514,7 +513,7 @@ class JoinMeshesSelected(bpy.types.Operator):
         Common.set_active(mesh)
         self.report({'INFO'}, t('JoinMeshesSelected.success'))
         
-        for i in range(0, 3):
+        for i in range(3):
             mesh.lock_location[i] = False
             mesh.lock_rotation[i] = False
             mesh.lock_scale[i] = False
@@ -662,7 +661,7 @@ class MergeWeights(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         active_obj = context.active_object
-        if not active_obj or not context.active_object.type == 'ARMATURE':
+        if not active_obj or context.active_object.type != 'ARMATURE':
             return False
         if active_obj.mode == 'EDIT' and context.selected_editable_bones:
             return True
@@ -705,7 +704,7 @@ class MergeWeightsToActive(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         active_obj = bpy.context.active_object
-        if not active_obj or not bpy.context.active_object.type == 'ARMATURE':
+        if not active_obj or bpy.context.active_object.type != 'ARMATURE':
             return False
         if active_obj.mode == 'EDIT' and bpy.context.selected_editable_bones and len(bpy.context.selected_editable_bones) > 1:
             if bpy.context.active_bone in bpy.context.selected_editable_bones:
@@ -755,7 +754,7 @@ def merge_weights(armature, parenting_list):
     Common.switch('EDIT')
 
     if not bpy.context.scene.keep_merged_bones:
-        for bone in parenting_list.keys():
+        for bone in parenting_list:
             edited_bone = armature.data.edit_bones.get(bone)
             if edited_bone is not None:
                 armature.data.edit_bones.remove(edited_bone)
@@ -906,7 +905,7 @@ class GenerateTwistBones(bpy.types.Operator):
         generate_upper = context.scene.generate_twistbones_upper
         armature = context.object
         bone_pairs = []
-        twist_locations = dict()
+        twist_locations = {}
         editable_bone_names = [bone.name for bone in context.selected_editable_bones]
         for bone_name in editable_bone_names:
             bone = armature.data.edit_bones[bone_name]
@@ -930,7 +929,7 @@ class GenerateTwistBones(bpy.types.Operator):
             print(twist_bone_head_tail[0])
             print(twist_bone_head_tail[1])
             for mesh in Common.get_meshes_objects(armature_name=armature.name):
-                if not bone_name in mesh.vertex_groups:
+                if bone_name not in mesh.vertex_groups:
                     continue
 
                 Common.set_active(mesh)
@@ -1097,7 +1096,7 @@ class RemoveDoubles(bpy.types.Operator):
             return initial_tris - len(mesh.data.polygons)
             
         except Exception as e:
-            raise ValueError(f"Failed to process mesh {mesh.name}: {str(e)}")
+            raise ValueError(f"Failed to process mesh {mesh.name}: {e!s}") from e
 
     def invoke(self, context, event):
         meshes = Common.get_meshes_objects(mode=3)
@@ -1290,11 +1289,11 @@ class RepairShapekeys(bpy.types.Operator):
             Common.switch('EDIT')
             Common.switch('EDIT')
             points = []
-            for vert_idx in range(0, len(obj.data.shape_keys.key_blocks[0].data)):
-                verts = dict()
+            for vert_idx in range(len(obj.data.shape_keys.key_blocks[0].data)):
+                verts = {}
                 for shape_idx in range(1, len(obj.data.shape_keys.key_blocks)):
                     vert_coord = obj.data.shape_keys.key_blocks[shape_idx].data[vert_idx]
-                    if not vert_coord in verts:
+                    if vert_coord not in verts:
                         verts[vert_coord] = 0
                     verts[vert_coord] += 1
                 found_coord = max(verts.items(), key=operator.itemgetter(1))[0]
@@ -1304,7 +1303,7 @@ class RepairShapekeys(bpy.types.Operator):
             bpy.ops.object.shape_key_add(from_mix=False)
             obj.active_shape_key.name = "CATS Antibasis"
 
-            for vert_idx in range(0, len(obj.data.shape_keys.key_blocks[0].data)):
+            for vert_idx in range(len(obj.data.shape_keys.key_blocks[0].data)):
                 obj.active_shape_key.data[vert_idx].co[0] = points[vert_idx].co[0]
                 obj.active_shape_key.data[vert_idx].co[1] = points[vert_idx].co[1]
                 obj.active_shape_key.data[vert_idx].co[2] = points[vert_idx].co[2]
@@ -1425,11 +1424,11 @@ class FixVRMShapesButton(bpy.types.Operator):
             pre_name = name_split[0]
             post_name = name_split[1]
 
-            if post_name in shapekeys_to_merge_eyes.keys():
+            if post_name in shapekeys_to_merge_eyes:
                 if pre_name == 'eye_face.f' or pre_name == 'eye_siroL.sL' or pre_name == 'eye_line_u.elu':
                     shapekeys_to_merge_eyes[post_name].append(shapekey.name)
 
-            elif post_name in shapekeys_to_merge_mouth.keys():
+            elif post_name in shapekeys_to_merge_mouth:
                 if pre_name == 'kuti_face.f' or pre_name == 'kuti_ha.ha' or pre_name == 'kuti_sita.t':
                     shapekeys_to_merge_mouth[post_name].append(shapekey.name)
 
@@ -1460,7 +1459,7 @@ class FixVRMShapesButton(bpy.types.Operator):
             bpy.ops.object.shape_key_move(type='TOP')
             bpy.ops.object.shape_key_clear()
 
-        for index in reversed(range(0, len(mesh.data.shape_keys.key_blocks))):
+        for index in reversed(range(len(mesh.data.shape_keys.key_blocks))):
             mesh.active_shape_key_index = index
             shapekey = mesh.active_shape_key
             if shapekey.name in shapekeys_used:
@@ -1507,12 +1506,12 @@ class CreateDigitigradeLegs(bpy.types.Operator):
                 digi1 = digi0.children[0]
                 digi2 = digi1.children[0]
                 digi3 = digi2.children[0]
-            except:
+            except Exception:
                 print("bone format incorrect! Please select a chain of 4 continious bones!")
             digi4 = None
             try:
                 digi4 = digi3.children[0]
-            except:
+            except Exception:
                 print("no toe bone. Continuing.")
             digi0.select = True
             digi1.select = True
@@ -1586,11 +1585,9 @@ class DuplicateBonesButton(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         active_obj = bpy.context.active_object
-        if not active_obj or not bpy.context.active_object.type == 'ARMATURE':
+        if not active_obj or bpy.context.active_object.type != 'ARMATURE':
             return False
-        if active_obj.mode == 'EDIT' and bpy.context.selected_editable_bones:
-            return True
-        elif active_obj.mode == 'POSE' and bpy.context.selected_pose_bones:
+        if (active_obj.mode == 'EDIT' and bpy.context.selected_editable_bones) or (active_obj.mode == 'POSE' and bpy.context.selected_pose_bones):
             return True
         return False
 
@@ -1685,7 +1682,7 @@ class ConnectBonesButton(bpy.types.Operator):
             return {'FINISHED'}
             
         except Exception as e:
-            self.report({'ERROR'}, f'Failed to connect bones: {str(e)}')
+            self.report({'ERROR'}, f'Failed to connect bones: {e!s}')
             return {'CANCELLED'}
             
         finally:
@@ -1715,7 +1712,7 @@ class ConvertToValveButton(bpy.types.Operator):
         else:
             armature = bpy.data.objects[self.armature_name]
 
-        reverse_bone_lookup = dict()
+        reverse_bone_lookup = {}
         for (preferred_name, name_list) in bone_names.items():
             for name in name_list:
                 reverse_bone_lookup[name] = preferred_name
@@ -1810,11 +1807,11 @@ class RemoveRigidbodiesJointsOperator(bpy.types.Operator):
         armature = context.active_object
         to_delete = []
         for child in Common.get_top_parent(armature).children:
-            if 'rigidbodies' in child.name or 'joints' in child.name and child.name not in to_delete:
+            if 'rigidbodies' in child.name or ('joints' in child.name and child.name not in to_delete):
                 to_delete.append(child.name)
                 continue
             for child2 in child.children:
-                if 'rigidbodies' in child2.name or 'joints' in child2.name and child2.name not in to_delete:
+                if 'rigidbodies' in child2.name or ('joints' in child2.name and child2.name not in to_delete):
                     to_delete.append(child2.name)
                     continue
         for obj_name in to_delete:

@@ -1,7 +1,6 @@
 # MIT License
 
 if "bpy" not in locals():
-    import bpy
     from . import register
     from . import armature
     from . import armature_bones

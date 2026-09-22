@@ -23,7 +23,6 @@ from . import common as Common
 from . import iconloader as Iconloader
 from . import translate as Translate
 from . import armature_bones as Bones
-from . import settings as Settings
 from .register import register_wrap
 from .translations import t
 from sys import intern
@@ -59,11 +58,11 @@ def get_enum_property_value(property_holder, property_name, items_func=None):
                 items = items_func(property_holder, bpy.context)
                 if items and 0 <= value < len(items):
                     return items[value][0]
-            except:
+            except Exception:
                 pass
         
         return str(value) if value is not None else ''
-    except:
+    except Exception:
         return ''
 
 
@@ -258,9 +257,7 @@ def switch(new_mode, check_mode=True):
         supported_modes = ['OBJECT', 'EDIT', 'SCULPT', 'VERTEX_PAINT', 'WEIGHT_PAINT', 'TEXTURE_PAINT']
     elif active.type == 'ARMATURE':
         supported_modes = ['OBJECT', 'EDIT', 'POSE']
-    elif active.type in ['CURVE', 'SURFACE', 'META', 'FONT']:
-        supported_modes = ['OBJECT', 'EDIT']
-    elif active.type == 'LATTICE':
+    elif active.type in ['CURVE', 'SURFACE', 'META', 'FONT'] or active.type == 'LATTICE':
         supported_modes = ['OBJECT', 'EDIT']
     else:
         supported_modes = ['OBJECT']
@@ -398,7 +395,7 @@ def vertex_group_exists(mesh_name, bone_name):
         try:
             mesh.vertex_groups[bone_name].weight(i)
             return True
-        except:
+        except Exception:
             pass
 
     return False
@@ -465,11 +462,11 @@ def validate_armature_selection():
                 def fix_armature_selection():
                     try:
                         bpy.context.scene.armature = new_armature
-                    except:
+                    except Exception:
                         pass
                     return None
                 bpy.app.timers.register(fix_armature_selection)
-    except:
+    except Exception:
         pass
 
 
@@ -478,7 +475,7 @@ def update_armature_selection(self, context):
     try:
         validate_armature_selection()
         update_material_list(self, context)
-    except:
+    except Exception:
         pass
 
 
@@ -675,10 +672,8 @@ def get_meshes_objects(armature_name=None, mode=0, check=True, visible_only=Fals
                 
             if mode == 0 or mode == 5: 
                 if ob.parent:
-                    if ob.parent.type == 'ARMATURE' and ob.parent.name == armature_name:
+                    if (ob.parent.type == 'ARMATURE' and ob.parent.name == armature_name) or (ob.parent.parent and ob.parent.parent.type == 'ARMATURE' and ob.parent.parent.name == armature_name):
                         meshes.append(ob)
-                    elif ob.parent.parent and ob.parent.parent.type == 'ARMATURE' and ob.parent.parent.name == armature_name:
-                        meshes.append(ob) 
 
             elif mode == 1:
                 if not ob.parent:
@@ -735,9 +730,7 @@ def get_meshes_objects_for_export(armature_name=None, mode=0, check=True):
             
         if mode == 0 or mode == 5: 
             if ob.parent:
-                if ob.parent.type == 'ARMATURE' and ob.parent.name == armature_name:
-                    meshes.append(ob)
-                elif ob.parent.parent and ob.parent.parent.type == 'ARMATURE' and ob.parent.parent.name == armature_name:
+                if (ob.parent.type == 'ARMATURE' and ob.parent.name == armature_name) or (ob.parent.parent and ob.parent.parent.type == 'ARMATURE' and ob.parent.parent.name == armature_name):
                     meshes.append(ob)
         elif mode == 1:
             if not ob.parent:
@@ -1036,7 +1029,7 @@ def save_shapekey_order(mesh_name):
 
     shape_key_order = []
     if has_shapekeys(mesh):
-        for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
+        for _index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
             shape_key_order.append(shapekey.name)
 
     if custom_data.get('shape_key_order'):
@@ -1056,10 +1049,7 @@ def save_shapekey_order(mesh_name):
 
 
 def repair_shapekey_order(mesh_name, armature_name=None):
-    if armature_name:
-        armature = bpy.data.objects.get(armature_name)
-    else:
-        armature = get_armature()
+    armature = bpy.data.objects.get(armature_name) if armature_name else get_armature()
     if not armature:
         return
     
@@ -1218,16 +1208,16 @@ def delete_zero_weight(armature_name=None, ignore=''):
     armature = get_armature(armature_name=armature_name)
     switch('EDIT')
 
-    bone_names_to_work_on = set([bone.name for bone in armature.data.edit_bones])
+    bone_names_to_work_on = {bone.name for bone in armature.data.edit_bones}
 
-    bone_name_to_edit_bone = dict()
+    bone_name_to_edit_bone = {}
     for edit_bone in armature.data.edit_bones:
         bone_name_to_edit_bone[edit_bone.name] = edit_bone
 
     vertex_group_names_used = set()
-    vertex_group_name_to_objects_having_same_named_vertex_group = dict()
+    vertex_group_name_to_objects_having_same_named_vertex_group = {}
     for objects in get_meshes_objects(armature_name=armature_name):
-        vertex_group_id_to_vertex_group_name = dict()
+        vertex_group_id_to_vertex_group_name = {}
         for vertex_group in objects.vertex_groups:
             vertex_group_id_to_vertex_group_name[vertex_group.index] = vertex_group.name
             if vertex_group.name not in vertex_group_name_to_objects_having_same_named_vertex_group:
@@ -1289,13 +1279,7 @@ def remove_unused_objects():
             delete_hierarchy(obj)
 
 def is_default_object(obj):
-    if obj.type == 'CAMERA' and obj.data.name == 'Camera':
-        return True
-    elif obj.type == 'LAMP' and obj.data.name == 'Lamp':
-        return True
-    elif obj.type == 'LIGHT' and obj.data.name == 'Light':
-        return True
-    elif obj.type == 'MESH' and obj.data.name == 'Cube':
+    if (obj.type == 'CAMERA' and obj.data.name == 'Camera') or (obj.type == 'LAMP' and obj.data.name == 'Lamp') or (obj.type == 'LIGHT' and obj.data.name == 'Light') or (obj.type == 'MESH' and obj.data.name == 'Cube'):
         return True
     return False
 
@@ -1892,7 +1876,7 @@ def html_to_text(html):
     try:
         parser.feed(html)
         parser.close()
-    except:
+    except Exception:
         pass
     return parser.get_text()
 
@@ -2056,10 +2040,10 @@ def _schedule_enum_fix(property_holder, scene, property_name, property_path, new
             try:
                 prop = scene_by_name.path_resolve(property_path, False)
                 setattr(prop.data, property_name, new_value)
-            except:
+            except Exception:
                 try:
                     setattr(scene_by_name, property_name, new_value)
-                except:
+                except Exception:
                     pass
         scheduled_property_set.discard(property_path)
         return None

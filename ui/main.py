@@ -72,11 +72,11 @@ def draw_info_box(layout, messages):
 
 
 __all__ = [
-    'ToolPanel',
     'SearchMenuOperatorBase',
-    'layout_split',
+    'ToolPanel',
     'add_button_with_small_button',
-    'draw_warning_box',
     'draw_error_box',
     'draw_info_box',
+    'draw_warning_box',
+    'layout_split',
 ]

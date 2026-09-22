@@ -452,10 +452,8 @@ def load_translations():
             dict_found = True
     except FileNotFoundError:
         print('DICTIONARY NOT FOUND!')
-        pass
     except json.decoder.JSONDecodeError:
         print("ERROR FOUND IN DICTIONARY")
-        pass
 
     try:
         with open(get_dictionary_google_file(), encoding="utf8") as file:
@@ -471,7 +469,7 @@ def load_translations():
                     if not name:
                         continue
 
-                    if name in temp_dict.keys():
+                    if name in temp_dict:
                         print(name, 'ALREADY IN INTERNAL DICT!')
                         continue
 
@@ -480,13 +478,11 @@ def load_translations():
     except FileNotFoundError:
         print('GOOGLE DICTIONARY NOT FOUND!')
         reset_google_dict()
-        pass
     except json.decoder.JSONDecodeError:
         print("ERROR FOUND IN GOOOGLE DICTIONARY")
         reset_google_dict()
-        pass
 
-    for key in sorted(temp_dict, key=lambda k: len(k), reverse=True):
+    for key in sorted(temp_dict, key=len, reverse=True):
         dictionary[key] = temp_dict[key]
 
 
@@ -540,7 +536,7 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
                 match = re.findall(regex, to_translate)
                 if match:
                     for name in match:
-                        if name not in google_input and name not in dictionary.keys():
+                        if name not in google_input and name not in dictionary:
                             google_input.append(name)
 
     if not google_input:
@@ -612,7 +608,7 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
 
     temp_dict = copy.deepcopy(dictionary)
     dictionary = OrderedDict()
-    for key in sorted(temp_dict, key=lambda k: len(k), reverse=True):
+    for key in sorted(temp_dict, key=len, reverse=True):
         dictionary[key] = temp_dict[key]
 
     save_google_dict()

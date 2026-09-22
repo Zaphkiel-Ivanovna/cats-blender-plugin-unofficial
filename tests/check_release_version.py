@@ -19,7 +19,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def cats_version():
-    tree = ast.parse(io.open(os.path.join(ROOT, "__init__.py"), encoding="utf-8").read())
+    with io.open(os.path.join(ROOT, "__init__.py"), encoding="utf-8") as handle:
+        tree = ast.parse(handle.read())
     for node in tree.body:
         if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "CATS_VERSION":
             return ast.literal_eval(node.value)

@@ -23,14 +23,14 @@ class EnableSMC(bpy.types.Operator):
                 if addon_utils.check(mod.__name__)[0]:
                     try:
                         bpy.ops.preferences.addon_disable(module=mod.__name__)
-                    except:
+                    except Exception:
                         pass
                     continue
             if mod.bl_info['name'] == "Shotariya's Material Combiner":
                 if mod.bl_info['version'] < (2, 1, 2, 9) and addon_utils.check(mod.__name__)[0]:
                     try:
                         bpy.ops.preferences.addon_disable(module=mod.__name__)
-                    except:
+                    except Exception:
                         pass
                     continue
 

@@ -2,7 +2,7 @@
 
 import bpy
 
-from .main import ToolPanel, SearchMenuOperatorBase, draw_info_box
+from .main import ToolPanel, draw_info_box
 from .. import globs
 from ..tools import common as Common
 from ..tools import iconloader as Iconloader

@@ -48,7 +48,7 @@ def check_for_imscale(force_refresh=False):
 
                 old_imscale_version = False
                 imscale_is_disabled = False
-                draw_imscale_ui = getattr(import_module(mod.__name__ + '.ui'), 'draw_ui')
+                draw_imscale_ui = import_module(mod.__name__ + '.ui').draw_ui
                 break
             
         _imscale_check_cache = True

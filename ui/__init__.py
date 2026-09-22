@@ -1,7 +1,6 @@
 # MIT License
 
 if "bpy" not in locals():
-    import bpy
     from . import main
     from . import quickaccess
     from . import optimization

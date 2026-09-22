@@ -6,10 +6,8 @@ import copy
 import math
 import platform
 from mathutils import Matrix
-from collections import defaultdict
 
 from . import common as Common
-from . import material as Material
 from . import translate as Translate
 from . import armature_bones as Bones
 from .register import register_wrap
@@ -201,7 +199,7 @@ def convert_bone_morphs_native(context, armature, mmd_root):
         context.view_layer.update()
         
         original_name = morph.name
-        shape_key_name, translated = Translate.translate(original_name, add_space=True, translating_shapes=True)
+        shape_key_name, _translated = Translate.translate(original_name, add_space=True, translating_shapes=True)
         shape_key = mesh.shape_key_add(name=shape_key_name)
         
         for bone_name, transforms in original_transforms.items():
@@ -249,7 +247,7 @@ class FixArmature(bpy.types.Operator):
                 return {'CANCELLED'}
                 
         except Exception as e:
-            self.report({'ERROR'}, f"Validation failed: {str(e)}")
+            self.report({'ERROR'}, f"Validation failed: {e!s}")
             return {'CANCELLED'}
         
         bone_cache = BoneCache(armature)
@@ -479,11 +477,11 @@ class FixArmature(bpy.types.Operator):
         if context.scene.remove_rigidbodies_joints:
             to_delete = []
             for child in Common.get_top_parent(armature).children:
-                if 'rigidbodies' in child.name or 'joints' in child.name and child.name not in to_delete:
+                if 'rigidbodies' in child.name or ('joints' in child.name and child.name not in to_delete):
                     to_delete.append(child.name)
                     continue
                 for child2 in child.children:
-                    if 'rigidbodies' in child2.name or 'joints' in child2.name and child2.name not in to_delete:
+                    if 'rigidbodies' in child2.name or ('joints' in child2.name and child2.name not in to_delete):
                         to_delete.append(child2.name)
                         continue
             for obj_name in to_delete:
@@ -501,7 +499,7 @@ class FixArmature(bpy.types.Operator):
                 if child.type != 'MESH':
                     Common.delete(child)
 
-        for i in range(0, 3):
+        for i in range(3):
             armature.lock_location[i] = False
             armature.lock_rotation[i] = False
             armature.lock_scale[i] = False
@@ -569,7 +567,7 @@ class FixArmature(bpy.types.Operator):
             Common.unselect_all()
             Common.set_active(mesh)
 
-            for i in range(0, 3):
+            for i in range(3):
                 mesh.lock_location[i] = False
                 mesh.lock_rotation[i] = False
                 mesh.lock_scale[i] = False
@@ -617,7 +615,7 @@ class FixArmature(bpy.types.Operator):
             pb.hide = False
         Translate.update_dictionary(to_translate)
         for bone in armature.data.bones:
-            bone.name, translated = Translate.translate(bone.name)
+            bone.name, _translated = Translate.translate(bone.name)
 
         Common.set_default_stage()
         Common.unselect_all()
@@ -910,10 +908,7 @@ class FixArmature(bpy.types.Operator):
             chest = armature.data.edit_bones.new('Chest')
             neck = armature.data.edit_bones.get('Neck')
 
-            if neck:
-                chest_top = neck.head
-            else:
-                chest_top = spine.tail
+            chest_top = neck.head if neck else spine.tail
 
             spine.name = 'Spine'
             chest.name = 'Chest'
@@ -1022,7 +1017,7 @@ class FixArmature(bpy.types.Operator):
                             if right_knee:
                                 leg_vectors.append((right_leg.head, right_knee.head))
                             for leg_head, knee_head in leg_vectors:
-                                if all(round(leg, 4) == round(knee, 4) for leg, knee in zip(leg_head.xy, knee_head.xy)):
+                                if all(round(leg, 4) == round(knee, 4) for leg, knee in zip(leg_head.xy, knee_head.xy, strict=True)):
                                     print('FIXING LEG')
                                     knee_head.y -= 0.001
 

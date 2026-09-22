@@ -13,7 +13,6 @@ from ..tools import material as Material
 from ..tools import bonemerge as Bonemerge
 from ..tools import rootbone as Rootbone
 from ..tools import armature_manual as Armature_manual
-from ..tools import armature_bones as Armature_bones
 
 from ..tools.register import register_wrap
 from ..tools.translations import t
@@ -140,7 +139,7 @@ def check_for_smc(force_refresh=False):
                 old_smc_version = False
                 smc_is_disabled = False
                 found_very_old_smc = False
-                draw_smc_ui = getattr(import_module(mod.__name__ + '.operators.ui.include'), 'draw_ui')
+                draw_smc_ui = import_module(mod.__name__ + '.operators.ui.include').draw_ui
                 break
         
         _smc_check_cache = True

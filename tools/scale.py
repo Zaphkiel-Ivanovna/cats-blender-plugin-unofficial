@@ -5,7 +5,6 @@ import bpy
 import webbrowser
 import addon_utils
 
-from . import common as Common
 from .register import register_wrap
 from .translations import t
 
@@ -22,7 +21,7 @@ class EnableIMScale(bpy.types.Operator):
                 if mod.bl_info['version'] < (0, 5, 2) and addon_utils.check(mod.__name__)[0]:
                     try:
                         bpy.ops.preferences.addon_disable(module=mod.__name__)
-                    except:
+                    except Exception:
                         pass
                     continue
 
