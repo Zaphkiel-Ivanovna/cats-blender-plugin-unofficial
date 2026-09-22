@@ -5,7 +5,6 @@
 """
 
 import ast
-import io
 import os
 import sys
 import warnings
@@ -43,40 +42,6 @@ def check_compiles():
     return errors
 
 
-def check_undefined_names():
-    """pyflakes, narrowed to undefined names.
-
-    Its other reports are mostly pre-existing unused imports, several of which are
-    load-bearing because @register_wrap registers classes at import time.
-    """
-    try:
-        from pyflakes import api, reporter
-    except ImportError:
-        print("  pyflakes not installed, skipping the undefined-name check")
-        return []
-
-    class Collect(reporter.Reporter):
-        def __init__(self):
-            super().__init__(io.StringIO(), io.StringIO())
-            self.found = []
-
-        def flake(self, message):
-            if type(message).__name__ == "UndefinedName":
-                self.found.append(f"{relative(message.filename)}:{message.lineno}: {message.message % message.message_args}")
-
-        def unexpectedError(self, filename, msg):
-            self.found.append(f"{relative(filename)}: {msg}")
-
-    collected = Collect()
-    for path in sources():
-        api.checkPath(path, collected)
-    # bpy.props annotations hold string literals that pyflakes reads as forward
-    # references, so Scene.* and similar names are reported and are not real.
-    return [f for f in collected.found
-            if not any(f.endswith(f"undefined name '{n}'")
-                       for n in ("Scene", "shapekeys", "HIDDEN", "PMX", "BLENDER", "Blender", "RENAMED_BONES"))]
-
-
 def check_manifest():
     """The manifest parses and its bounds line up with the version gate."""
     import tomllib
@@ -106,18 +71,22 @@ def check_manifest():
     return errors
 
 
+def in_ci():
+    return os.environ.get("CI", "").strip().lower() in {"1", "true", "yes"}
+
+
 def check_ruff():
-    """ruff, configured by ruff.toml, which is expected to report nothing."""
-    import shutil
+    """ruff, the version pinned in tests/requirements.txt, expected to report nothing."""
+    import importlib.util
     import subprocess
 
-    if shutil.which("ruff") is None:
-        if os.environ.get("CI"):
+    if importlib.util.find_spec("ruff") is None:
+        if in_ci():
             return ["ruff is not installed, and CI must not skip the lint check"]
-        print("  ruff not installed, skipping the lint check")
+        print("  ruff not installed for this Python, skipping the lint check")
         return []
 
-    proc = subprocess.run(["ruff", "check", "--no-cache", "--quiet",
+    proc = subprocess.run([sys.executable, "-m", "ruff", "check", "--no-cache", "--quiet",
                            "--output-format", "concise", ROOT],
                           capture_output=True, text=True, cwd=ROOT)
     if proc.returncode == 0:
@@ -129,7 +98,6 @@ def check_ruff():
 def main():
     failed = 0
     for label, check in (("syntax and warnings", check_compiles),
-                         ("undefined names", check_undefined_names),
                          ("manifest", check_manifest),
                          ("ruff", check_ruff)):
         problems = check()

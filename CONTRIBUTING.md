@@ -30,7 +30,9 @@ The headless suite installs the tree into a throwaway directory, so your own Ble
 configuration is untouched. CI runs both against Blender 5.0, 5.1 and 5.2.
 
 `static_checks.py` includes ruff, configured in `ruff.toml` and expected to report
-nothing. `ruff check --fix .` handles most of what it raises. The rules it leaves out are
+nothing. `ruff check --fix .` handles most of what it raises, except unused imports,
+which it reports and leaves alone: some of them register classes at import time, so
+deciding whether one can go is yours. The rules it leaves out are
 either Blender idioms or style that would only churn inherited code, and each one is
 there on purpose, so a new exclusion needs a reason in the pull request.
 

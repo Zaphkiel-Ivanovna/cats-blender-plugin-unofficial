@@ -25,6 +25,8 @@ select = [
     "W",
 ]
 
+unfixable = ["F401"]
+
 ignore = [
     "A004",
     "E402",
