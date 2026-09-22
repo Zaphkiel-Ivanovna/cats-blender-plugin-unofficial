@@ -17,7 +17,6 @@ from .translations import t
 settings_data = None
 settings_data_unchanged = None
 
-# Settings name = [Default Value, Require Blender Restart]
 settings_default = OrderedDict()
 settings_default['embed_textures'] = [False, False]
 settings_default['ui_lang'] = ["auto", False]
@@ -168,9 +167,6 @@ def reset_settings(full_reset=False, to_reset_settings=None):
     print('SETTINGS RESET')
 
 def start_apply_settings_timer():
-    # Settings can't be written during register(), so apply them shortly after.
-    # bpy.app.timers runs the callback on the main thread, which is the only place
-    # bpy.context.scene may be touched.
     if not bpy.app.timers.is_registered(apply_settings):
         bpy.app.timers.register(apply_settings, first_interval=0.1)
 

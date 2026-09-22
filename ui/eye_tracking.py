@@ -147,7 +147,6 @@ class EyeTrackingPanel(ToolPanel, bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        # Parent panel is now just a container for sub-panels
         pass
 
 
@@ -164,7 +163,6 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         self.draw_sdk3_section(col, context)
 
     def draw_sdk3_section(self, col, context):
-        # Info section
         draw_info_box(col, [
             t("Av3EyeTrackingPanel.info1"),
             t("Av3EyeTrackingPanel.info2"),
@@ -173,11 +171,9 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Eye bones section
         box = col.box()
         box_col = box.column(align=True)
         
-        # Get armature and verify it exists
         armature = Common.get_armature()
         if not armature:
             draw_error_box(col, t('EyeTrackingPanel.error.noArm'))
@@ -195,7 +191,6 @@ class SDK3EyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Actions section
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Eyetracking.RotateEyeBonesForAv3Button.bl_idname, icon='CON_ROTLIMIT')
@@ -214,7 +209,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         self.draw_legacy_section(col, context)
 
     def draw_legacy_section(self, col, context):
-        # Info section
         draw_info_box(col, [
             t("LegacyEyeTrackingPanel.info1"),
             t("LegacyEyeTrackingPanel.info2"),
@@ -225,7 +219,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Troubleshooting Guide
         box = col.box()
         help_col = box.column(align=True)
         help_col.scale_y = 0.85
@@ -237,13 +230,11 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Main content section
         if context.scene.eye_mode == 'CREATION':
             self.draw_creation_mode(context, col)
         else:
             self.draw_testing_mode(context, col)
 
-        # Progress Indicator (when operations are running)
         if hasattr(context.scene, "progress_update"):
             col.separator()
             box = col.box()
@@ -320,7 +311,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         col.separator()
         active = not context.scene.disable_eye_blinking
         
-        # Check if a valid mesh is selected (not the empty placeholder)
         mesh_name = context.scene.mesh_name_eye
         if not mesh_name or mesh_name == 'Cats_empty_enum_identifier':
             col.label(text=t('EyeTrackingPanel.error.noMesh'), icon='ERROR')
@@ -336,28 +326,24 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
             col.label(text=t('EyeTrackingPanel.error.noShapekeys'), icon='ERROR')
             return
 
-        # Wink Left
         row = col.row(align=True)
         row.scale_y = 1.1
         row.active = active
         row.label(text=t('Scene.wink_left.label')+":")
         row.prop_search(context.scene, "wink_left", mesh.data.shape_keys, "key_blocks", text="")
 
-        # Wink Right  
         row = col.row(align=True)
         row.scale_y = 1.1
         row.active = active
         row.label(text=t('Scene.wink_right.label')+":")
         row.prop_search(context.scene, "wink_right", mesh.data.shape_keys, "key_blocks", text="")
 
-        # Lower Lid Left
         row = col.row(align=True)
         row.scale_y = 1.1
         row.active = active
         row.label(text=t('Scene.lowerlid_left.label')+":")
         row.prop_search(context.scene, "lowerlid_left", mesh.data.shape_keys, "key_blocks", text="")
 
-        # Lower Lid Right
         row = col.row(align=True)
         row.scale_y = 1.1
         row.active = active
@@ -396,7 +382,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
     def draw_testing_controls(self, context, col, armature):
         col.separator()
         
-        # Eye rotation controls
         row = col.row(align=True)
         row.prop(context.scene, 'eye_rotation_x', icon='FILE_PARENT')
         row = col.row(align=True)
@@ -404,14 +389,12 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         row = col.row(align=True)
         row.operator(Eyetracking.ResetRotationButton.bl_idname, icon=globs.ICON_EYE_ROTATION)
 
-        # Eye distance controls
         col.separator()
         row = col.row(align=True)
         row.prop(context.scene, 'eye_distance')
         row = col.row(align=True)
         row.operator(Eyetracking.AdjustEyesButton.bl_idname, icon='CURVE_NCIRCLE')
 
-        # Blinking controls
         col.separator()
         row = col.row(align=True)
         row.prop(context.scene, 'eye_blink_shape')
@@ -422,12 +405,10 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         row = col.row(align=True)
         row.operator(Eyetracking.ResetBlinkTest.bl_idname, icon='FILE_REFRESH')
 
-        # Warnings
         self.draw_testing_warnings(context, col, armature)
 
         col.separator()
         
-        # Testing controls
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Eyetracking.StopTestingButton.bl_idname, icon='PAUSE')
@@ -436,7 +417,6 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         row.scale_y = 1.0
         row.operator(Eyetracking.ResetEyeTrackingButton.bl_idname, icon='FILE_REFRESH')
 
-        # Eye Movement Preview at bottom
         preview_box = col.box()
         preview_box.label(text="Eye Movement Preview:", icon='PREVIEW_RANGE')
         
@@ -444,17 +424,16 @@ class LegacyEyeTrackingSubPanel(ToolPanel, bpy.types.Panel):
         row.prop(context.scene, "eye_rotation_x", text="Vertical Range")
         row.prop(context.scene, "eye_rotation_y", text="Horizontal Range")
         
-        # Visual indicator for current eye rotation
         indicator_row = preview_box.row()
         indicator_row.scale_y = 2.0
         indicator_row.alignment = 'CENTER'
         
         current_x = context.scene.eye_rotation_x
         current_y = context.scene.eye_rotation_y
-        direction = "●"  # Center point
+        direction = "●"
         
         if abs(current_x) > 15 or abs(current_y) > 15:
-            direction = "◎"  # Warning indicator for extreme angles
+            direction = "◎"
         
         indicator_row.label(text=direction)
 

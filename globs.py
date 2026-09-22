@@ -22,7 +22,6 @@ def user_data_path(*subpaths, create=True):
     try:
         base = bpy.utils.extension_path_user(__package__, create=create)
     except (AttributeError, ValueError):
-        # Not installed as an extension, e.g. a symlinked development checkout
         base = bpy.utils.user_resource('CONFIG', path='cats_blender_plugin', create=create)
 
     path = os.path.join(base, *subpaths)
@@ -39,15 +38,11 @@ def user_data_dir(*subpaths):
 
 
 def get_settings_file():
-    # Lives here rather than in tools.settings: tools.translations needs it while
-    # tools.settings is still half imported, and the two import each other.
     return user_data_path("settings.json")
 
-# for bone root parenting
 root_bones = {}
 root_bones_choices = {}
 
-# Keeps track of operations done for unit testing
 testing = []
 
 dev_branch = False
@@ -55,11 +50,9 @@ dict_found = False
 version = None
 version_str = ''
 
-# other
 time_format = "%Y-%m-%d %H:%M:%S"
 time_format_github = "%Y-%m-%dT%H:%M:%SZ"
 
-# Icons for UI
 ICON_ADD, ICON_REMOVE = 'ADD', 'REMOVE'
 ICON_URL = 'URL'
 ICON_SETTINGS = 'SETTINGS'
@@ -73,9 +66,8 @@ ICON_PROTECT = 'LOCKED'
 ICON_UNPROTECT = 'UNLOCKED'
 ICON_EXPORT = 'EXPORT'
 
-# Additional commonly used icons
 ICON_ERROR = 'ERROR'
-ICON_WARNING = 'ERROR'  # Blender uses same icon for warnings
+ICON_WARNING = 'ERROR'
 ICON_INFO = 'INFO'
 ICON_QUESTION = 'QUESTION'
 ICON_REFRESH = 'FILE_REFRESH'

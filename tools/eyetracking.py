@@ -91,21 +91,17 @@ class EyeTrackingValidator:
     @staticmethod
     def validate_setup(context, mesh_name: str) -> Tuple[bool, str]:
         """Validate the complete eye tracking setup"""
-        # Validate armature
         armature = Common.get_armature()
         if not armature:
             return False, t('EyeTrackingValidator.error.noArmature')
             
-        # Validate mesh
         mesh = Common.get_objects().get(mesh_name)
         if not mesh:
             return False, t('EyeTrackingValidator.error.noMesh', mesh=mesh_name)
             
-        # Validate shape keys
         if not Common.has_shapekeys(mesh):
             return False, t('EyeTrackingValidator.error.noShapekeys')
             
-        # Validate vertex groups
         left_group, right_group = EyeTrackingValidator.find_eye_vertex_groups(mesh_name)
         missing_groups = []
         
@@ -117,7 +113,6 @@ class EyeTrackingValidator:
         if missing_groups:
             return False, t('EyeTrackingValidator.error.missingGroups', groups=', '.join(missing_groups))
             
-        # Validate bone structure
         required_bones = [context.scene.head, context.scene.eye_left, context.scene.eye_right]
         missing_bones = [bone for bone in required_bones if bone not in armature.data.bones]
         
@@ -200,16 +195,11 @@ class RotateEyeBonesForAv3Button(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context: bpy.types.Context):
-        # The eye_left and eye_right properties already check that there is an armature, so we don't need to check that
-        # here.
         scene = context.scene
         if not (Common.is_enum_non_empty(scene.eye_left) or Common.is_enum_non_empty(scene.eye_right)):
             cls.poll_message_set(t("Av3EyeTrackingRotateEyeBones.poll.noBones"))
             return False
 
-        # If another Object is currently in EDIT mode and the armature is not also in the same EDIT mode, we cannot swap
-        # the armature into EDIT mode and then swap back to the original Object in its original EDIT mode because
-        # Undo/Redo will not work for the changes made by this Operator.
         armature = Common.get_armature()
         if context.object.mode == 'EDIT' and armature not in context.objects_in_mode:
             cls.poll_message_set(t("Av3EyeTrackingRotateEyeBones.poll.notInCurrentEditMode", armature=armature.name))
@@ -225,8 +215,6 @@ class RotateEyeBonesForAv3Button(bpy.types.Operator):
 
         already_editing = armature_obj.mode == 'EDIT'
 
-        # If we're in EDIT mode already, we need to access the matrices of the edit bones because the bones may not be
-        # up-to-date.
         if already_editing:
             bones = armature.edit_bones
             matrix_attribute = "matrix"
@@ -234,31 +222,18 @@ class RotateEyeBonesForAv3Button(bpy.types.Operator):
             bones = armature.bones
             matrix_attribute = "matrix_local"
 
-        # Both bones could be set the same, so use a set to ensure we only have unique names
         eye_bone_names = {scene.eye_left, scene.eye_right}
 
-        # The position of the head and tail are easy to compare from OBJECT mode through head_local and tail_local, but
-        # bone roll is not easily accessible.
-        # We can determine bone roll (and the overall orientation of the bone) through matrix_local.
-        # The expected matrix_local for a bone pointing straight up and with zero roll is a 90 degrees rotation about
-        # the X-axis and no other rotation.
         straight_up_and_zero_roll = mathutils.Matrix.Rotation(math.pi/2, 3, 'X')
 
-        # Check each bone
         for eye_bone_name in list(eye_bone_names):
             bone = bones[eye_bone_name]
 
-            # Due to floating-point precision, it's unlikely that the bone's matrix_local will exactly match, so
-            # we'll check if it's close enough.
             matrix_close_enough = True
 
-            # Create iterators to iterate through each value of the matrices in order
             matrix_iter = chain.from_iterable(getattr(bone, matrix_attribute).to_3x3())
             expected_matrix_iter = chain.from_iterable(straight_up_and_zero_roll)
             for bone_val, expected_val in zip(matrix_iter, expected_matrix_iter):
-                # Note that while the values may be accessed as standard python float which is up to double-precision,
-                # mathutils.Matrix/Vector only store single-precision float, so the tolerances need to be more lenient
-                # than they might usually be.
                 if not math.isclose(bone_val, expected_val, rel_tol=1e-6, abs_tol=1e-6):
                     matrix_close_enough = False
                     break
@@ -266,50 +241,37 @@ class RotateEyeBonesForAv3Button(bpy.types.Operator):
                 eye_bone_names.remove(eye_bone_name)
 
         if not eye_bone_names:
-            # Both bones are already oriented correctly
             self.report({'INFO'}, t("Av3EyeTrackingRotateEyeBones.info.noChanges"))
             return {'CANCELLED'}
 
         if not already_editing:
-            # Store active/selected/hidden object states, so they can be restored afterwards.
             saved_data = Common.SavedData()
 
-            # set_default_stage will set the armature as active
             armature_obj2 = Common.set_default_stage()
             assert armature_obj == armature_obj2
 
-            # Bones can only be moved while in EDIT mode.
             Common.switch('EDIT')
 
         edit_bones = armature.edit_bones
 
-        # Get each eye's EditBone
         eye_bones = {edit_bones[eye_bone_name] for eye_bone_name in eye_bone_names}
 
-        # Setting a bone's matrix doesn't currently update mirrored bones like when setting a bone's head/tail, but
-        # we'll temporarily disable mirroring in-case this changes in the future.
         orig_mirroring = armature.use_mirror_x
         armature.use_mirror_x = False
 
-        # We're going to result in moving the tails of the eye bones, but we don't want this to affect any other bones,
-        # so disconnect any bones that are connected to the eye bones.
         for bone in edit_bones:
             if bone.use_connect and bone.parent in eye_bones:
                 bone.use_connect = False
 
         for eye_bone in eye_bones:
-            # Re-orient the bone to point straight up with zero roll, maintaining the original length and the position
-            # of the bone's head.
             new_matrix = straight_up_and_zero_roll.to_4x4()
             new_matrix.translation = eye_bone.matrix.translation
             eye_bone.matrix = new_matrix
 
-        # Restore the mirror setting.
         armature.use_mirror_x = orig_mirroring
 
         if not already_editing:
             Common.switch('OBJECT')
-            # Restore active/selected/hidden object states
             saved_data.load()
 
         self.report({'INFO'}, t("Av3EyeTrackingRotateEyeBones.success"))
@@ -343,7 +305,6 @@ class CreateEyesButton(bpy.types.Operator):
         wm = bpy.context.window_manager
         wm.progress_begin(0, 100)
 
-        # Validate setup
         validator = EyeTrackingValidator()
         is_valid, message = validator.validate_setup(context, context.scene.mesh_name_eye)
         if not is_valid:
@@ -351,7 +312,6 @@ class CreateEyesButton(bpy.types.Operator):
             wm.progress_end()
             return {'CANCELLED'}
 
-        # Create backup
         backup = EyeTrackingBackup()
         if not backup.store_bone_positions(Common.get_armature()):
             self.report({'WARNING'}, "Failed to create backup")
@@ -361,7 +321,6 @@ class CreateEyesButton(bpy.types.Operator):
             wm.progress_update(10)
             context.scene.progress_update = 10
 
-            # Set the stage
             armature = Common.set_default_stage()
             Common.switch('EDIT')
             wm.progress_update(20)
@@ -370,12 +329,10 @@ class CreateEyesButton(bpy.types.Operator):
             mesh_name = context.scene.mesh_name_eye
             self.mesh = Common.get_objects().get(mesh_name)
 
-            # Set up old bones
             head = armature.data.edit_bones.get(context.scene.head)
             old_eye_left = armature.data.edit_bones.get(context.scene.eye_left)
             old_eye_right = armature.data.edit_bones.get(context.scene.eye_right)
 
-            # Validation checks with proper error messages
             if not context.scene.disable_eye_blinking:
                 if any(Common.is_enum_empty(getattr(context.scene, attr)) for attr in 
                       ['wink_left', 'wink_right', 'lowerlid_left', 'lowerlid_right']):
@@ -383,47 +340,39 @@ class CreateEyesButton(bpy.types.Operator):
                     self.report({'ERROR'}, t('CreateEyesButton.error.noShapeSelected'))
                     return {'CANCELLED'}
 
-            # Use cached vertex groups for performance
             VertexGroupCache.clear_cache()
             left_eye_verts = VertexGroupCache.get_vertex_indices(mesh_name, 'LeftEye')
             right_eye_verts = VertexGroupCache.get_vertex_indices(mesh_name, 'RightEye')
             wm.progress_update(30)
             context.scene.progress_update = 30
 
-            # Create the new eye bones
             new_left_eye = bpy.context.object.data.edit_bones.new('LeftEye')
             new_right_eye = bpy.context.object.data.edit_bones.new('RightEye')
             wm.progress_update(40)
             context.scene.progress_update = 40
 
-            # Parent them correctly
             new_left_eye.parent = head
             new_right_eye.parent = head
             wm.progress_update(50)
             context.scene.progress_update = 50
 
-            # Calculate their new positions
             fix_eye_position(context, old_eye_left, new_left_eye, head, False)
             fix_eye_position(context, old_eye_right, new_right_eye, head, True)
             wm.progress_update(60)
             context.scene.progress_update = 60
 
-            # Store names before mode switch
             new_right_eye_name = new_right_eye.name
             old_eye_left_name = old_eye_left.name
             old_eye_right_name = old_eye_right.name
             head_name = head.name
 
-            # Switch to mesh
             Common.set_active(self.mesh)
             Common.switch('OBJECT')
             wm.progress_update(70)
             context.scene.progress_update = 70
 
-            # Fix shape key bug
             bpy.context.object.show_only_shape_key = False
 
-            # Handle vertex groups
             if not context.scene.disable_eye_movement:
                 self.copy_vertex_group(old_eye_left_name, 'LeftEye')
                 self.copy_vertex_group(old_eye_right_name, 'RightEye')
@@ -435,13 +384,11 @@ class CreateEyesButton(bpy.types.Operator):
             wm.progress_update(80)
             context.scene.progress_update = 80
 
-            # Handle shape keys
             shapes = [context.scene.wink_left, context.scene.wink_right, 
                      context.scene.lowerlid_left, context.scene.lowerlid_right]
             new_shapes = ['vrc.blink_left', 'vrc.blink_right', 
                          'vrc.lowerlid_left', 'vrc.lowerlid_right']
 
-            # Remove existing shapekeys efficiently
             for new_shape in new_shapes:
                 for index, shapekey in enumerate(self.mesh.data.shape_keys.key_blocks):
                     if shapekey.name == new_shape and new_shape not in shapes:
@@ -451,7 +398,6 @@ class CreateEyesButton(bpy.types.Operator):
             wm.progress_update(85)
             context.scene.progress_update = 85
 
-            # Copy shape keys with progress updates
             shapes[0] = self.copy_shape_key(context, shapes[0], new_shapes, 1)
             wm.progress_update(88)
             context.scene.progress_update = 88
@@ -467,7 +413,6 @@ class CreateEyesButton(bpy.types.Operator):
 
             Common.sort_shape_keys(mesh_name)
 
-            # Reset the scenes
             context.scene.head = head_name
             context.scene.eye_left = old_eye_left_name
             context.scene.eye_right = old_eye_right_name
@@ -476,7 +421,6 @@ class CreateEyesButton(bpy.types.Operator):
             context.scene.lowerlid_left = shapes[2]
             context.scene.lowerlid_right = shapes[3]
 
-            # Cleanup
             Common.set_default_stage()
             Common.remove_rigidbodies_global()
             Common.remove_empty()
@@ -484,7 +428,6 @@ class CreateEyesButton(bpy.types.Operator):
             wm.progress_update(100)
             context.scene.progress_update = 100
 
-            # Verify hierarchy
             is_correct = Armature.check_hierarchy(True, [['Hips', 'Spine', 'Chest', 'Neck', 'Head']])
 
             if context.scene.disable_eye_movement:
@@ -512,12 +455,9 @@ class CreateEyesButton(bpy.types.Operator):
             return {'CANCELLED'}
 
     def copy_vertex_group(self, vertex_group, rename_to):
-        # iterate through the vertex group
         vertex_group_index = 0
         for group in self.mesh.vertex_groups:
-            # Find the vertex group
             if group.name == vertex_group:
-                # Copy the group and rename
                 self.mesh.vertex_groups.active_index = vertex_group_index
                 bpy.ops.object.vertex_group_copy()
                 self.mesh.vertex_groups[vertex_group + '_copy'].name = rename_to
@@ -529,7 +469,6 @@ class CreateEyesButton(bpy.types.Operator):
         blinking = not context.scene.disable_eye_blinking
         new_name = new_names[new_index - 1]
 
-        # Rename shapekey if it already exists and set all values to 0
         for shapekey in self.mesh.data.shape_keys.key_blocks:
             shapekey.value = 0
             if shapekey.name == new_name:
@@ -537,7 +476,6 @@ class CreateEyesButton(bpy.types.Operator):
                 if from_shape == new_name:
                     from_shape = shapekey.name
 
-        # Create new shape key
         for index, shapekey in enumerate(self.mesh.data.shape_keys.key_blocks):
             if from_shape == shapekey.name:
                 self.mesh.active_shape_key_index = index
@@ -545,7 +483,6 @@ class CreateEyesButton(bpy.types.Operator):
                 self.mesh.shape_key_add(name=new_name, from_mix=blinking)
                 break
 
-        # Reset shape keys
         for shapekey in self.mesh.data.shape_keys.key_blocks:
             shapekey.value = 0
         self.mesh.active_shape_key_index = 0
@@ -567,8 +504,6 @@ class CreateEyesButton(bpy.types.Operator):
 
 
 def fix_eye_position(context, old_eye, new_eye, head, right_side):
-    # Verify that the new eye bone is in the correct position
-    # by comparing the old eye vertex group average vector location
     mesh = Common.get_objects()[context.scene.mesh_name_eye]
     scale = -context.scene.eye_distance + 1
 
@@ -585,18 +520,9 @@ def fix_eye_position(context, old_eye, new_eye, head, right_side):
             p1 = mesh.matrix_world @ head.head
             p2 = mesh.matrix_world @ coords_eye
             length = (p1 - p2).length
-            print(length)  # TODO calculate scale if bone is too close to center of the eye
+            print(length)
 
-    # dist = math.sqrt((coords_eye[0] - head.head[x_cord]) ** 2 + (coords_eye[1] - head.head[y_cord]) ** 2 + (coords_eye[2] - head.head[z_cord]) ** 2)
-    # dist2 = np.linalg.norm(coords_eye - head.head)
-    # dist3 = math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 + (p1[2] - p2[2]) ** 2)
-    # dist4 = np.linalg.norm(p1 - p2)
-    # print(dist)
-    # print(dist2)
-    # print(2 ** 2)
-    # print(dist4)
 
-    # Check if bone matrix == world matrix, important for xps models
     x_cord, y_cord, z_cord, fbx = Common.get_bone_orientations(Common.get_armature())
 
     if context.scene.disable_eye_movement:
@@ -617,9 +543,7 @@ def fix_eye_position(context, old_eye, new_eye, head, right_side):
     new_eye.tail[z_cord] = new_eye.head[z_cord] + 0.1
 
 
-# Repair vrc shape keys
 def repair_shapekeys(mesh_name, vertex_group):
-    # This is done to fix a very weird bug where the mouth stays open sometimes
     Common.set_default_stage()
     Common.remove_rigidbodies_global()
     mesh = Common.get_objects()[mesh_name]
@@ -632,7 +556,6 @@ def repair_shapekeys(mesh_name, vertex_group):
     bm.from_mesh(mesh.data)
     bm.verts.ensure_lookup_table()
 
-    # Get a vertex from the eye vertex group # TODO https://i.imgur.com/tWi8lk6.png after many times resetting the eyes
     print('DEBUG: Group: ' + vertex_group)
     group = mesh.vertex_groups.get(vertex_group)
     if group is None:
@@ -652,7 +575,6 @@ def repair_shapekeys(mesh_name, vertex_group):
         return
 
     print('DEBUG: Repairing shapes!')
-    # Move that vertex by a tiny amount
     moved = False
     i = 0
     for key in bm.verts.layers.shape.keys():
@@ -688,9 +610,7 @@ def randBoolNumber():
     return 1
 
 
-# Repair vrc shape keys with random vertex
-def repair_shapekeys_mouth(mesh_name):  # TODO Add vertex repairing!
-    # This is done to fix a very weird bug where the mouth stays open sometimes
+def repair_shapekeys_mouth(mesh_name):
     Common.set_default_stage()
     Common.remove_rigidbodies_global()
     mesh = Common.get_objects()[mesh_name]
@@ -703,7 +623,6 @@ def repair_shapekeys_mouth(mesh_name):  # TODO Add vertex repairing!
     bm.from_mesh(mesh.data)
     bm.verts.ensure_lookup_table()
 
-    # Move that vertex by a tiny amount
     moved = False
     for key in bm.verts.layers.shape.keys():
         if not key.startswith('vrc'):
@@ -762,7 +681,6 @@ class StartTestingButton(bpy.types.Operator):
         eye_left_data = armature.data.bones.get('LeftEye')
         eye_right_data = armature.data.bones.get('RightEye')
 
-        # Save initial eye rotations
         eye_left.rotation_mode = 'XYZ'
         eye_left_rot = copy.deepcopy(eye_left.rotation_euler)
         eye_right.rotation_mode = 'XYZ'
@@ -784,8 +702,6 @@ class StartTestingButton(bpy.types.Operator):
             pb.select = False
             pb.hide = True
 
-        # eye_left.select = True
-        # eye_right.select = True
         eye_left_data.hide = False
         eye_right_data.hide = False
 
@@ -824,7 +740,6 @@ class StopTestingButton(bpy.types.Operator):
             pb.select = False
 
         armature = Common.set_default_stage()
-        # armature.data.pose_position = 'REST'
 
         for shape_key in Common.get_objects()[context.scene.mesh_name_eye].data.shape_keys.key_blocks:
             shape_key.value = 0
@@ -838,24 +753,19 @@ class StopTestingButton(bpy.types.Operator):
 
         return {'FINISHED'}
 
-# This gets called by the eye testing sliders
 def set_rotation(self, context):
     global eye_left, eye_right, eye_left_rot, eye_right_rot
 
-    # Initialize testing mode if not already set up
     if not eye_left or not eye_right:
         StartTestingButton.execute(StartTestingButton, context)
         return None
 
-    # Apply rotations
     eye_left.rotation_mode = 'XYZ'
     eye_right.rotation_mode = 'XYZ'
 
-    # Store and print values for debugging
     x_rotation = math.radians(context.scene.eye_rotation_x)
     y_rotation = math.radians(context.scene.eye_rotation_y)
     
-    # Apply rotations with initial offset
     eye_left.rotation_euler[0] = eye_left_rot[0] + x_rotation
     eye_left.rotation_euler[1] = eye_left_rot[1] + y_rotation
 
@@ -887,7 +797,6 @@ def stop_testing(self, context):
             pb.select = False
 
         armature = Common.set_default_stage()
-        # armature.data.pose_position = 'REST'
 
         for shape_key in Common.get_objects()[context.scene.mesh_name_eye].data.shape_keys.key_blocks:
             shape_key.value = 0
@@ -966,7 +875,6 @@ class AdjustEyesButton(bpy.types.Operator):
             self.report({'ERROR'}, t('AdjustEyesButton.error.noVertex', bone='LeftEye'))
             return {'CANCELLED'}
 
-        # Find the existing vertex group of the right eye bone
         if not Common.vertex_group_exists(mesh_name, 'RightEye'):
             self.report({'ERROR'}, t('AdjustEyesButton.error.noVertex', bone='RightEye'))
             return {'CANCELLED'}

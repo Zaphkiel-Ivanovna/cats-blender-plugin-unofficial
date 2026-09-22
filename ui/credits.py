@@ -19,7 +19,6 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
         box = layout.box()
         col = box.column(align=True)
 
-        # Version info section with custom icon
         row = col.row(align=True)
         row.scale_y = 1.0
         row.label(text=t('CreditsPanel.desc1') + globs.version_str + ')', 
@@ -27,7 +26,6 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Current maintainers info
         info_col = col.column(align=True)
         info_col.scale_y = 0.85
         info_col.label(text=t('CreditsPanel.maintainers1'))
@@ -35,7 +33,6 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Contributors section
         contrib_col = col.column(align=True)
         contrib_col.scale_y = 0.85
         contrib_col.label(text=t('CreditsPanel.desc4'))
@@ -44,14 +41,12 @@ class CreditsPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Original creators
         desc_col = col.column(align=True)
         desc_col.scale_y = 0.85
         desc_col.label(text=t('CreditsPanel.originalCreators'))
 
         col.separator()
 
-        # Action buttons
         actions_col = col.column(align=True)
         
         help_row = actions_col.row(align=True)

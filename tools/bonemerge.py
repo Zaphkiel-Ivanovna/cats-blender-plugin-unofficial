@@ -26,7 +26,6 @@ class LoadBonesButton(bpy.types.Operator):
         globs.root_bones_choices = {}
         choices = get_parent_root_bones(self, context)
         
-        # Use the wrap_dynamic_enum_items helper
         wrapped_items = Common.wrap_dynamic_enum_items(
             lambda s, c: choices,
             'merge_bone'
@@ -60,7 +59,6 @@ class BoneMergeButton(bpy.types.Operator):
         parent_bones = globs.root_bones[context.scene.merge_bone]
         mesh = Common.get_objects()[context.scene.merge_mesh]
         ratio = context.scene.merge_ratio
-        # debug
         print(ratio)
 
         did = 0
@@ -76,7 +74,6 @@ class BoneMergeButton(bpy.types.Operator):
         wm = bpy.context.window_manager
         wm.progress_begin(did, todo)
 
-        # Start the bone check for every parent
         for bone_name in parent_bones:
             print('\nPARENT: ' + bone_name)
             bone = armature.data.bones.get(bone_name)
@@ -100,22 +97,18 @@ class BoneMergeButton(bpy.types.Operator):
         self.report({'INFO'}, t('BoneMergeButton.success'))
         return {'FINISHED'}
 
-    # Go through this until the last child is reached
     def check_bone(self, mesh, bone, ratio, i):
         if bone is None:
             print('END FOUND')
             return
 
-        # Increase number by the ratio
         i += ratio
         bone_name = bone.name
 
-        # Get all children names
         children = []
         for child in bone.children:
             children.append(child.name)
 
-        # Check if bone will be merged
         if i >= 100:
             i -= 100
 
@@ -124,7 +117,6 @@ class BoneMergeButton(bpy.types.Operator):
 
                 print('Merging ' + bone_name + ' into ' + parent_name+ ' with ratio ' + str(i))
 
-                # Mix the weights
                 Common.set_default_stage()
                 Common.remove_rigidbodies_global()
                 Common.set_active(mesh)
@@ -137,7 +129,6 @@ class BoneMergeButton(bpy.types.Operator):
                 Common.set_default_stage()
                 Common.remove_rigidbodies_global()
 
-                # We are done, remove the bone
                 Common.remove_bone(bone_name)
 
         armature = Common.set_default_stage()

@@ -19,7 +19,6 @@ from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, St
 documents_folder = pathlib.Path.home() / "Documents"
 default_exports_dir = os.path.join(documents_folder, "Cats")
 
-# Scene attribute names added by register(), filled in at the end of it
 _registered_properties = []
 
 
@@ -132,7 +131,6 @@ def register():
         default=True
     )
 
-    # Manual
     Scene.use_google_only = BoolProperty(
         name=t('Scene.use_google_only.label'),
         description=t('Scene.use_google_only.desc'),
@@ -163,7 +161,6 @@ def register():
         default=False
     )
 
-    # Custom Avatar Creation
     Scene.merge_mode = EnumProperty(
         name=t('Scene.merge_mode.label'),
         description=t('Scene.merge_mode.desc'),
@@ -254,7 +251,6 @@ def register():
         ]
     )
 
-    # Eye Tracking
     Scene.eye_mode = EnumProperty(
         name=t('Scene.eye_mode.label'),
         description=t('Scene.eye_mode.desc'),
@@ -268,7 +264,6 @@ def register():
     Scene.mesh_name_eye = EnumProperty(
         name=t('Scene.mesh_name_eye.label'),
         description=t('Scene.mesh_name_eye.desc'),
-        # get_meshes is used elsewhere than for EnumProperty items so must contain the sorting itself
         items=wrap_dynamic_enum_items(Common.get_meshes, 'mesh_name_eye', sort=False),
     )
 
@@ -390,7 +385,6 @@ def register():
         subtype='FACTOR'
     )
 
-    # Visemes
 
     Scene.viseme_preview_mode = BoolProperty(
         name=t('Scene.viseme_preview_mode.label'),
@@ -440,7 +434,6 @@ def register():
     Scene.mesh_name_viseme = EnumProperty(
         name=t('Scene.mesh_name_viseme.label'),
         description=t('Scene.mesh_name_viseme.desc'),
-        # get_meshes is used elsewhere than for EnumProperty items so must contain the sorting itself
         items=wrap_dynamic_enum_items(Common.get_meshes, 'mesh_name_viseme', sort=False),
     )
 
@@ -473,15 +466,12 @@ def register():
         subtype='FACTOR'
     )
 
-    # Bone Parenting
     Scene.root_bone = EnumProperty(
         name=t('Scene.root_bone.label'),
         description=t('Scene.root_bone.desc'),
-        # Root bone choices get cached, so we don't want to fix them in-place, otherwise the cache would get modified
         items=wrap_dynamic_enum_items(Rootbone.get_parent_root_bones, 'root_bone', sort=False, in_place=False),
     )
 
-    # Optimize
     Scene.optimize_mode = EnumProperty(
         name=t('Scene.optimize_mode.label'),
         description=t('Scene.optimize_mode.desc'),
@@ -491,7 +481,6 @@ def register():
             ("BONEMERGING", t('Scene.optimize_mode.bonemerging.label'), t('Scene.optimize_mode.bonemerging.desc')),
         ]
     )
-    # Bone Merging
     Scene.merge_ratio = FloatProperty(
         name=t('Scene.merge_ratio.label'),
         description=t('Scene.merge_ratio.desc'),
@@ -506,18 +495,15 @@ def register():
     Scene.merge_mesh = EnumProperty(
         name=t('Scene.merge_mesh.label'),
         description=t('Scene.merge_mesh.desc'),
-        # get_meshes is used elsewhere than for EnumProperty items so must contain the sorting itself
         items=wrap_dynamic_enum_items(Common.get_meshes, 'merge_mesh', sort=False),
     )
 
     Scene.merge_bone = EnumProperty(
         name=t('Scene.merge_bone.label'),
         description=t('Scene.merge_bone.desc'),
-        # Root bone choices get cached, so we don't want to fix them in-place, otherwise the cache would get modified
         items=wrap_dynamic_enum_items(Rootbone.get_parent_root_bones, 'merge_bone', sort=False, in_place=False),
     )
 
-    # Settings
     Scene.embed_textures = BoolProperty(
         name=t('Scene.embed_textures.label'),
         description=t('Scene.embed_textures.desc'),
@@ -536,9 +522,6 @@ def register():
         default=False
     )
 
-    # Union with what is already recorded: on a second register() without an
-    # unregister() in between, the earlier properties are already on Scene and would
-    # drop out of the diff.
     _registered_properties = sorted(set(_registered_properties) | (set(dir(Scene)) - attributes_before))
 
 

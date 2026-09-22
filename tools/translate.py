@@ -16,7 +16,6 @@ from collections import OrderedDict
 from . import common as Common
 from .register import register_wrap
 from .. import globs
-# from ..googletrans import Translator  # TODO Remove this
 from ..extern_tools.google_trans_new.google_trans_new import google_translator
 from .translations import t
 
@@ -50,10 +49,8 @@ class TranslateShapekeyButton(bpy.types.Operator):
 
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
-            # Fallback to default dir
             cats_dir = get_cats_dir()
             
-        # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
             try:
                 os.makedirs(cats_dir) 
@@ -150,10 +147,8 @@ class TranslateBonesButton(bpy.types.Operator):
 
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
-            # Fallback to default dir
             cats_dir = get_cats_dir()
             
-        # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
             try:
                 os.makedirs(cats_dir) 
@@ -239,10 +234,8 @@ class TranslateObjectsButton(bpy.types.Operator):
 
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
-            # Fallback to default dir
             cats_dir = get_cats_dir()
 
-        # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
             try:
                 os.makedirs(cats_dir)
@@ -323,10 +316,8 @@ class TranslateMaterialsButton(bpy.types.Operator):
 
         cats_dir = context.scene.custom_translate_csv_export_dir
         if not cats_dir:
-            # Fallback to default dir
             cats_dir = get_cats_dir()
 
-        # Check if dir exists or can be created
         if not os.path.exists(cats_dir):
             try:
                 os.makedirs(cats_dir)
@@ -399,54 +390,6 @@ class TranslateMaterialsButton(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# @register_wrap
-# class TranslateTexturesButton(bpy.types.Operator):
-#     bl_idname = 'cats_translate.textures'
-#     bl_label = t('TranslateTexturesButton.label')
-#     bl_description = t('TranslateTexturesButton.desc')
-#     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
-#
-#     def execute(self, context):
-#         # It currently seems to do nothing. This should probably only added when the folder textures really get translated. Currently only the materials are important
-#         self.report({'INFO'}, t('TranslateTexturesButton.success_alt'))
-#         return {'FINISHED'}
-#
-#         translator = google_translator()
-#
-#         to_translate = []
-#         for ob in Common.get_objects():
-#             if ob.type == 'MESH':
-#                 for matslot in ob.material_slots:
-#                     for texslot in bpy.data.materials[matslot.name].texture_slots:
-#                         if texslot:
-#                             print(texslot.name)
-#                             to_translate.append(texslot.name)
-#
-#         translated = []
-#         try:
-#             translations = translator.translate(to_translate, lang_tgt='en')
-#         except SSLError:
-#             self.report({'ERROR'}, t('TranslateTexturesButton.error.noInternet'))
-#             return {'FINISHED'}
-#
-#         for translation in translations:
-#             translated.append(translation)
-#
-#         i = 0
-#         for ob in Common.get_objects():
-#             if ob.type == 'MESH':
-#                 for matslot in ob.material_slots:
-#                     for texslot in bpy.data.materials[matslot.name].texture_slots:
-#                         if texslot:
-#                             bpy.data.textures[texslot.name].name = translated[i]
-#                             i += 1
-#
-#         Common.unselect_all()
-#
-#         self.report({'INFO'}, t('TranslateTexturesButton.success', number=str(i)))
-#         return {'FINISHED'}
-
-
 @register_wrap
 class TranslateAllButton(bpy.types.Operator):
     bl_idname = 'cats_translate.all'
@@ -456,10 +399,8 @@ class TranslateAllButton(bpy.types.Operator):
 
     def execute(self, context):
         
-        # Check if the export_translate_csv is checked and if the blend file is saved
         if context.scene.export_translate_csv:
             if not bpy.data.filepath:
-                # Prompt the user to save the blend file
                 self.report({'ERROR'}, "Please save the blend file before exporting translations.")
                 return {'CANCELLED'}
 
@@ -499,19 +440,16 @@ class TranslateAllButton(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# Loads the dictionaries at the start of blender
 def load_translations():
     global dictionary
     dictionary = OrderedDict()
     temp_dict = OrderedDict()
     dict_found = False
 
-    # Load internal dictionary
     try:
         with open(get_dictionary_file(), encoding="utf8") as file:
             temp_dict = json.load(file, object_pairs_hook=collections.OrderedDict)
             dict_found = True
-            # print('DICTIONARY LOADED!')
     except FileNotFoundError:
         print('DICTIONARY NOT FOUND!')
         pass
@@ -519,7 +457,6 @@ def load_translations():
         print("ERROR FOUND IN DICTIONARY")
         pass
 
-    # Load local google dictionary and add it to the temp dict
     try:
         with open(get_dictionary_google_file(), encoding="utf8") as file:
             global dictionary_google
@@ -540,7 +477,6 @@ def load_translations():
 
                     temp_dict[name] = trans
 
-            # print('GOOGLE DICTIONARY LOADED!')
     except FileNotFoundError:
         print('GOOGLE DICTIONARY NOT FOUND!')
         reset_google_dict()
@@ -550,40 +486,33 @@ def load_translations():
         reset_google_dict()
         pass
 
-    # Sort temp dictionary by lenght and put it into the global dict
     for key in sorted(temp_dict, key=lambda k: len(k), reverse=True):
         dictionary[key] = temp_dict[key]
 
-    # for key, value in dictionary.items():
-    #     print('"' + key + '" - "' + value + '"')
 
     return dict_found
 
 
 def update_dictionary(to_translate_list, translating_shapes=False, self=None):
     global dictionary, dictionary_google
-    regex = u'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]+'  # Regex to look for japanese chars
+    regex = u'[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]+'
 
     use_google_only = False
     if translating_shapes and bpy.context.scene.use_google_only:
         use_google_only = True
 
-    # Check if single string is given and put it into an array
     if type(to_translate_list) is str:
         to_translate_list = [to_translate_list]
 
     google_input = []
 
-    # Translate everything
     for to_translate in to_translate_list:
         length = len(to_translate)
         translated_count = 0
 
         to_translate = fix_jp_chars(to_translate)
 
-        # Translate shape keys with Google Translator only, if the user chose this
         if use_google_only:
-            # If name doesn't contain any jp chars, don't translate
             if not re.findall(regex, to_translate):
                 continue
 
@@ -595,7 +524,6 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
             if not translated:
                 google_input.append(to_translate)
 
-        # Translate with internal dictionary
         else:
             for key, value in dictionary.items():
                 if key in to_translate:
@@ -604,12 +532,10 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
                     else:
                         continue
 
-                    # Check if string is fully translated
                     translated_count += len(key)
                     if translated_count >= length:
                         break
 
-            # If not fully translated, translate the rest with Google
             if translated_count < length:
                 match = re.findall(regex, to_translate)
                 if match:
@@ -618,10 +544,8 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
                             google_input.append(name)
 
     if not google_input:
-        # print('NO GOOGLE TRANSLATIONS')
         return
 
-    # Translate the rest with google translate
     print('GOOGLE DICT UPDATE!')
     translator = google_translator(url_suffix='com')
     token_tries = 0
@@ -659,30 +583,24 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
             print('', 'You got an error message from Google:', error, '')
             return
         except AttributeError:
-            # If the translator wasn't able to create a stable connection to Google, just retry it again
-            # This is an issue with Google since Nov 2020: https://github.com/ssut/py-googletrans/issues/234
             token_tries += 1
             if token_tries < 3:
                 print('RETRY', token_tries)
                 translator = google_translator(url_suffix='com')
                 continue
 
-            # If if didn't work after 3 tries, just quit
-            # The response from Google was printed into "cats/resources/google-response.txt"
             if self:
                 self.report({'ERROR'}, t('update_dictionary.error.apiChanged'))
             print('ERROR: GOOGLE API CHANGED!')
             print(traceback.format_exc())
             return
 
-    # Update the dictionaries
     for i, translation in enumerate(translations):
         name = google_input[i]
 
         if use_google_only:
             dictionary_google['translations_full'][name] = translation
         else:
-            # Capitalize words
             translation_words = translation.split(' ')
             translation_words = [word.capitalize() for word in translation_words]
             translation = ' '.join(translation_words)
@@ -692,13 +610,11 @@ def update_dictionary(to_translate_list, translating_shapes=False, self=None):
 
         print(google_input[i], '->', translation)
 
-    # Sort dictionary
     temp_dict = copy.deepcopy(dictionary)
     dictionary = OrderedDict()
     for key in sorted(temp_dict, key=lambda k: len(k), reverse=True):
         dictionary[key] = temp_dict[key]
 
-    # Save the google dict locally
     save_google_dict()
 
     print('DICTIONARY UPDATE SUCCEEDED!')
@@ -712,44 +628,35 @@ def translate(to_translate, add_space=False, translating_shapes=False):
     length = len(to_translate)
     translated_count = 0
 
-    # Figure out whether to use google only or not
     use_google_only = False
     if translating_shapes and bpy.context.scene.use_google_only:
         use_google_only = True
 
-    # Add space for shape keys
     addition = ''
     if add_space:
         addition = ' '
 
-    # Convert half chars into full chars
     to_translate = fix_jp_chars(to_translate)
 
-    # Translate shape keys with Google Translator only, if the user chose this
     if use_google_only:
         for key, value in dictionary_google.get('translations_full').items():
             if to_translate == key and value:
                 to_translate = value
 
-    # Translate with internal dictionary
     else:
         for key, value in dictionary.items():
             if key in to_translate:
-                # If string is empty, don't replace it. This will be done at the end
                 if not value:
                     continue
 
                 to_translate = to_translate.replace(key, addition + value)
 
-                # Check if string is fully translated
                 translated_count += len(key)
                 if translated_count >= length:
                     break
 
     to_translate = to_translate.replace('.L', '_L').replace('.R', '_R').replace('  ', ' ').replace('し', '').replace('っ', '').strip()
 
-    # print('"' + pre_translation + '"')
-    # print('"' + to_translate + '"')
 
     return to_translate, pre_translation != to_translate
 
@@ -780,7 +687,6 @@ def save_google_dict():
         json.dump(dictionary_google, outfile, ensure_ascii=False, indent=4)
 
 
-# Check if shape key meets translation conditions
 def can_translate_shape_key(shapekey, skip_locked_shape_keys):
     if skip_locked_shape_keys:
         if not shapekey.lock_shape:

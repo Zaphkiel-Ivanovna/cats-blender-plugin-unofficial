@@ -28,7 +28,6 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
         box = layout.box()
         col = box.column(align=True)
 
-        # Info section
         draw_info_box(col, [
             t("MMDOptions.info1"),
             t("MMDOptions.info2"),
@@ -40,7 +39,6 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
         
         col.separator()
 
-        # Fix Model section
         row = col.row(align=True)
         row.scale_y = 1.3
         split = row.split(factor=0.85, align=True)
@@ -49,7 +47,6 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Rigidbodies section
         draw_info_box(col, [
             t("MMDOptions.RemoveRigidBodiesManaulInfo1"),
             t("MMDOptions.RemoveRigidBodiesManaulInfo2")
@@ -63,7 +60,6 @@ class MMDOptions(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Help section
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(MMDOptionswiki.bl_idname, icon_value=Iconloader.preview_collections["custom_icons"]["help1"].icon_id)
@@ -114,7 +110,6 @@ class ModelSettings(bpy.types.Operator):
 
         col.separator(factor=1.5)
 
-        # Warning text
         warning_col = col.column(align=True)
         warning_col.scale_y = 0.7
         warning_col.label(text=t('ModelSettings.warn.fbtFix1'), icon='INFO')

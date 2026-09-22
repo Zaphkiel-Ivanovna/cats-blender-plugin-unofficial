@@ -1,6 +1,5 @@
 # GPL License
 
-# Thanks to https://www.thegrove3d.com/learn/how-to-translate-a-blender-addon/ for the idea
 
 import os
 import bpy
@@ -53,7 +52,6 @@ def find_translation_file(language_code):
 def load_translations(override_language=None):
     global dictionary, languages, last_loaded_language, _addon_startup_time
 
-    # Set startup time on first load
     if _addon_startup_time is None:
         _addon_startup_time = time.time()
 
@@ -68,11 +66,9 @@ def load_translations(override_language=None):
         language = get_language_from_settings()
         print(f"Selected language: {language}")
 
-    # Get all current languages
     languages = ["auto"] + list_language_codes()
     print(f"Available languages: {languages}")
 
-    # If language is not available, fallback to en_US
     language_to_load = language if language and language in languages else None
     if language_to_load is None:
         print(f"Language '{language}' not available, defaulting to en_US")
@@ -97,7 +93,6 @@ def load_translations(override_language=None):
 
 
 def t(phrase: str, *args, **kwargs):
-    # Translate the given phrase into Blender's current language.
     output = dictionary.get(phrase)
     if output is None:
         if verbose:
@@ -117,9 +112,6 @@ def get_languages_list(self, context):
     choices = []
 
     for language in languages:
-        # 1. Will be returned by context.scene
-        # 2. Will be shown in lists
-        # 3. will be shown in the hover description (below description)
         choices.append((language, language, language))
 
     return choices
@@ -130,16 +122,12 @@ def update_ui(self, context):
 
     print("update_ui function called")
 
-    # Don't trigger reload during the first 2 seconds after addon load (initialization period or crashes may occur)
     if _addon_startup_time and (time.time() - _addon_startup_time) < 2.0:
         print("Skipping reload during initialization period")
         return
 
-    # Get the NEW language value directly from the scene property (not from file)
-    # because the update callback is triggered BEFORE the settings file is saved
     current_language = context.scene.ui_lang if context and hasattr(context, 'scene') else None
 
-    # Handle "auto" mode - detect from Blender locale
     if current_language and "auto" in current_language.lower():
         current_language = convert_locale_to_language_code(bpy.app.translations.locale)
         if not current_language:
@@ -150,12 +138,10 @@ def update_ui(self, context):
     if current_language != last_loaded_language:
         print(f"Language changed from {last_loaded_language} to {current_language}, reloading translations")
 
-        # Save the settings first so get_language_from_settings() will return the new value
         settings.update_settings_core(None, None)
 
         load_translations()
 
-        # Automatically reload scripts after a delay to apply new translations (old method was unreliable)
         def delayed_reload():
             try:
                 print("Auto-reloading scripts to apply new language...")
@@ -165,14 +151,12 @@ def update_ui(self, context):
                 print(f"Script reload failed: {e}")
             return None
 
-        # Delay by 2 seconds to ensure all dialogs are closed and operations complete (Or we get crashes due to gotchaes situation)
         bpy.app.timers.register(delayed_reload, first_interval=2.0)
     else:
         print("Language unchanged, no reload needed")
 
 
 def get_language_from_settings():
-    # Load settings file
     try:
         with open(globs.get_settings_file(), encoding="utf8") as file:
             settings_data = json.load(file)
@@ -189,8 +173,6 @@ def get_language_from_settings():
 
     lang = settings_data.get("ui_lang")
     if not lang or "auto" in lang.lower():
-        # Auto-detect language from Blender's locale. Read it here rather than at
-        # import time, because bpy.app.translations.locale changes at runtime.
         current_locale = bpy.app.translations.locale
         detected_lang = convert_locale_to_language_code(current_locale)
         print(f"Auto-detecting language from Blender locale: {current_locale} -> {detected_lang}")
@@ -207,31 +189,24 @@ def convert_locale_to_language_code(blender_locale):
     if not blender_locale:
         return None
 
-    # Blender locale is already in the format we need (e.g., 'en_US')
     locale_str = str(blender_locale)
 
-    # Check if exact match exists in available languages
     available = list_language_codes()
     for lang_code in available:
         if locale_str == lang_code:
             print(f"Found exact locale match: {lang_code}")
             return lang_code
 
-    # Try to match by language code (first part before underscore)
     language_only = locale_str.split("_")[0].lower() if "_" in locale_str else locale_str.lower()
     for lang_code in available:
         if lang_code.lower().startswith(language_only):
             print(f"Found language match: {lang_code}")
             return lang_code
 
-    # Fallback to English if no match
     print(f"No language match found for locale: {locale_str}, defaulting to en_US")
     return None
 
 def reload_scripts():
-    # script.reload() unregisters and re-imports every add-on, including this one.
-    # It cannot run while the operator that asked for it is still on the stack, so
-    # it goes through a timer and runs once execute() has returned.
     bpy.ops.script.reload()
     return None
 
@@ -244,32 +219,25 @@ class DownloadTranslations(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        # GitHub repository and folder information
         repo_owner = "teamneoneko"
         repo_name = "Cats-Blender-Plugin-Unofficial-translations"
         branch = "5x-translations"
         folder_path = "UI%20Tanslations"
 
-        # Construct the API URL to get the list of files in the folder
         api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{folder_path}?ref={branch}"
 
         target_dir = get_user_translations_dir()
 
         try:
-            # Send a GET request to the API URL
             response = requests.get(api_url, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()  # Raise an exception if the request was unsuccessful
+            response.raise_for_status()
 
-            # Parse the JSON response
             entries = response.json()
 
-            # Download each translation file
             for entry in entries:
                 if entry["type"] != "file" or not entry["name"].endswith(".json"):
                     continue
 
-                # The name comes from a remote listing, so refuse anything that is
-                # not a bare filename rather than joining it into a local path
                 file_name = entry["name"]
                 if file_name != os.path.basename(file_name) or file_name.startswith("."):
                     print(f"Skipped translation with an unexpected name: {file_name!r}")
@@ -290,11 +258,10 @@ class DownloadTranslations(bpy.types.Operator):
 
         print('TRANSLATIONS DOWNLOAD FINISHED')
 
-        # Download dictionary.json from GitHub
         print('DOWNLOAD DICTIONARY FILE')
         try:
             response = requests.get(dictionary_download_link, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()  # Raise an exception if the request was unsuccessful
+            response.raise_for_status()
             with open(globs.user_data_path("dictionary.json"), 'wb') as out_file:
                 out_file.write(response.content)
         except requests.exceptions.RequestException as e:
@@ -307,8 +274,6 @@ class DownloadTranslations(bpy.types.Operator):
 
         self.report({'INFO'}, "Successfully downloaded the translations and dictionary")
         return {'FINISHED'}
-
-
 
 
 load_translations()

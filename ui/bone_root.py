@@ -19,7 +19,6 @@ class SearchMenuOperator_root_bone(SearchMenuOperatorBase, bpy.types.Operator):
     my_enum: bpy.props.EnumProperty(
         name=t('Scene.root_bone.label'),
         description=t('Scene.root_bone.desc'),
-        # get_parent_root_bones caches results so the wrapper cannot run in-place
         items=wrap_dynamic_enum_items(
             Rootbone.get_parent_root_bones, bl_idname, sort=False, in_place=False, is_holder=False
         ),
@@ -37,14 +36,12 @@ class BoneRootPanel(ToolPanel, bpy.types.Panel):
         box = layout.box()
         col = box.column(align=True)
 
-        # Root bone selection
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(SearchMenuOperator_root_bone.bl_idname, text=context.scene.root_bone, icon='BONE_DATA')
 
         col.separator()
 
-        # Action buttons
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Rootbone.RefreshRootButton.bl_idname, icon='FILE_REFRESH')

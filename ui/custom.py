@@ -110,7 +110,6 @@ class CustomPanel(ToolPanel, bpy.types.Panel):
         layout = self.layout
         col = layout.column(align=True)
 
-        # Tutorial button
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Armature_custom.CustomModelTutorialButton.bl_idname, icon='FORWARD')
@@ -135,7 +134,6 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Settings
         box = col.box()
         box_col = box.column(align=True)
         box_col.scale_y = 0.75
@@ -148,12 +146,10 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Merge selection
         box = col.box()
         box_col = box.column(align=True)
         box_col.scale_y = 1.0
 
-        # Get safe enum values for display (handles integer indices in Blender 5.0)
         merge_into_name = Common.get_enum_property_value(context.scene, 'merge_armature_into', Common.get_armature_list)
         merge_armature_name = Common.get_enum_property_value(context.scene, 'merge_armature', Common.get_armature_merge_list)
 
@@ -169,7 +165,6 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
                     text=merge_armature_name if merge_armature_name else t('CustomPanel.selectArmature'), 
                     icon_value=Iconloader.preview_collections["custom_icons"]["UP_ARROW"].icon_id)
 
-        # Bone attachment if needed
         if not context.scene.merge_same_bones:
             found = False
             base_armature = Common.get_armature(armature_name=merge_into_name)
@@ -194,7 +189,6 @@ class MergeArmatureSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Merge button
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Armature_custom.MergeArmature.bl_idname, icon='ARMATURE_DATA')
@@ -222,7 +216,6 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Settings
         box = col.box()
         box_col = box.column(align=True)
         box_col.scale_y = 0.75
@@ -230,12 +223,10 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Merge selection
         box = col.box()
         box_col = box.column(align=True)
         box_col.scale_y = 1.0
 
-        # Get safe enum values for display (handles integer indices in Blender 5.0)
         merge_into_name = Common.get_enum_property_value(context.scene, 'merge_armature_into', Common.get_armature_list)
         attach_mesh_name = Common.get_enum_property_value(context.scene, 'attach_mesh', Common.get_top_meshes)
         attach_bone_name = Common.get_enum_property_value(context.scene, 'attach_to_bone', Common.get_bones_merge)
@@ -260,7 +251,6 @@ class AttachMeshSubPanel(ToolPanel, bpy.types.Panel):
 
         col.separator()
 
-        # Attach button
         row = col.row(align=True)
         row.scale_y = 1.3
         row.operator(Armature_custom.AttachMesh.bl_idname, icon='MESH_DATA')

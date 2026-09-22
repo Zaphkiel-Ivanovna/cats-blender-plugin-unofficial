@@ -1,7 +1,6 @@
 # MIT License
 
 if "bpy" not in locals():
-    # print('STARTUP TOOLS!!')
     import bpy
     from . import register
     from . import armature
@@ -24,9 +23,8 @@ if "bpy" not in locals():
     from . import viseme
     from . import iconloader
 else:
-    # print('RELOAD TOOLS!!')
     import importlib
-    importlib.reload(register)  # Has to be first
+    importlib.reload(register)
     importlib.reload(armature)
     importlib.reload(armature_bones)
     importlib.reload(armature_manual)

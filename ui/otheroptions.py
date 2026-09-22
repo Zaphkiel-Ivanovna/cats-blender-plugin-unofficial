@@ -32,7 +32,6 @@ class OtherOptionsPanel(ToolPanel, bpy.types.Panel):
         row.operator(Armature_manual.SeparateByLooseParts.bl_idname, text=t('OtherOptionsPanel.SeparateByLooseParts.label'))
         row.operator(Armature_manual.SeparateByShapekeys.bl_idname, text=t('OtherOptionsPanel.SeparateByShapekeys.label'))
 
-        # Translate
         col.separator()
         row = col.row(align=True)
         row.label(text=t('OtherOptionsPanel.translate'), icon='FILE_REFRESH')

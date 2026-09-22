@@ -64,17 +64,14 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
         Common.remove_unused_objects()
 
-        # Save all current objects to check which armatures got added by the importer
         pre_import_objects = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
 
-        # Import the files using their corresponding importer
         if self.directory:
             for f in self.files:
                 file_name = f.name
                 self.import_file(self.directory, file_name)
                 if file_name.lower().endswith('.zip'):
                     has_zip_file = True
-        # If this operator is called with no directory but a filepath argument, import that
         elif self.filepath:
             print(self.filepath)
             self.import_file(os.path.dirname(self.filepath), os.path.basename(self.filepath))
@@ -83,7 +80,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             if not zip_files:
                 Common.show_error(4, [t('ImportAnyModel.error.emptyZip')])
 
-            # Import all models from zip files that contain only one importable model
             remove_keys = []
             for zip_path, files in copy.deepcopy(zip_files).items():
                 context.scene.zip_content = zip_path + ' ||| ' + files[0]
@@ -91,15 +87,12 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
                     ImportAnyModel.extract_file()
                     remove_keys.append(zip_path)
 
-            # Remove the models from zip file list that got already imported
             for key in remove_keys:
                 zip_files.pop(key)
 
-            # Only if a zip contains more than one model, open the zip model selection popup
             if zip_files.keys():
                 bpy.ops.cats_importer.zip_popup('INVOKE_DEFAULT')
 
-        # Create list of armatures that got added during import, select them in cats and fix their bone orientations if necessary
         fix_armatures_post_import(pre_import_objects)
 
         return {'FINISHED'}
@@ -109,7 +102,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         file_path = os.path.join(directory, file_name)
         file_ending = file_name.split('.')[-1].lower()
 
-        # MMD
         if file_ending == 'pmx' or file_ending == 'pmd':
             try:
                 bpy.ops.mmd_tools_local.import_model('EXEC_DEFAULT',
@@ -123,7 +115,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             except (TypeError, ValueError):
                 bpy.ops.mmd_tools_local.import_model('INVOKE_DEFAULT')
 
-        # XNALara
         elif file_ending == 'xps' or file_ending == 'mesh' or file_ending == 'ascii':
             try:
                 bpy.ops.xps_tools.import_model('EXEC_DEFAULT',
@@ -131,7 +122,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             except AttributeError:
                 bpy.ops.cats_importer.install_xps('INVOKE_DEFAULT')
 
-        # Source Engine
         elif file_ending == 'smd' or file_ending == 'qc' or file_ending == 'qci' or file_ending == 'vta' or file_ending == 'dmx':
             try:
                 bpy.ops.import_scene.smd('EXEC_DEFAULT',
@@ -140,10 +130,8 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             except AttributeError:
                 bpy.ops.cats_importer.install_source('INVOKE_DEFAULT')
 
-        # FBX
         elif file_ending == 'fbx':
 
-            # Enable fbx if it isn't enabled yet
             fbx_is_enabled = addon_utils.check('io_scene_fbx')[1]
             if not fbx_is_enabled:
                 addon_utils.enable('io_scene_fbx')
@@ -151,7 +139,7 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             try:
                 bpy.ops.import_scene.fbx('EXEC_DEFAULT',
                                          filepath=file_path,
-                                         automatic_bone_orientation=False,  # Is true better? There are issues with True
+                                         automatic_bone_orientation=False,
                                          use_prepost_rot=False,
                                          use_anim=False)
             except (TypeError, ValueError):
@@ -161,7 +149,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
                     Common.show_error(6.2, [t('ImportAnyModel.error.unsupportedFBX')])
                 print(str(e))
 
-        # VRM
         elif file_ending == 'vrm':
             pre_import_armatures = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
             pre_import_meshes = [obj for obj in bpy.data.objects if obj.type == 'MESH']
@@ -182,12 +169,10 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             if len(post_import_armatures) != 1:
                 return
 
-            # Set imported vrm armature as the parent for the imported meshes
             post_import_armature = post_import_armatures[0]
             for mesh in post_import_meshes:
                 mesh.parent = post_import_armature
 
-        # DAE
         elif file_ending == 'dae':
             try:
                 bpy.ops.wm.collada_import('EXEC_DEFAULT',
@@ -197,12 +182,10 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             except (TypeError, ValueError):
                 bpy.ops.wm.collada_import('INVOKE_DEFAULT')
 
-        # ZIP
         elif file_ending == 'zip':
             with zipfile.ZipFile(file_path, 'r') as zipObj:
                 global zip_files
 
-                # Check content of zip for importable models
                 for content in zipObj.namelist():
                     content_name = os.path.basename(content)
                     content_format = content_name.split('.')[-1]
@@ -221,7 +204,6 @@ class ImportAnyModel(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         model_dir = os.path.dirname(model_path_full)
         model_file_name = os.path.basename(model_path_full)
 
-        # Extract the
         with zipfile.ZipFile(zip_path, 'r') as zipObj:
             for member in zipObj.infolist():
                 member.filename = encode_str(member.filename)
@@ -237,7 +219,6 @@ def fix_bone_orientations(armature):
 
     fix_bones = True
 
-    # Check if all the bones are pointing in the same direction
     for bone in armature.data.edit_bones:
         equal_axis_count = 0
         if bone.head[0] == bone.tail[0]:
@@ -247,7 +228,6 @@ def fix_bone_orientations(armature):
         if bone.head[2] == bone.tail[2]:
             equal_axis_count += 1
 
-        # If the bone points to more than one direction, don't fix the armatures bones
         if equal_axis_count < 2:
             fix_bones = False
 
@@ -257,7 +237,6 @@ def fix_bone_orientations(armature):
 
 
 def fix_armatures_post_import(pre_import_objects):
-    # Store current visibility states
     saved_states = Common.SavedData()
     
     arm_added_during_import = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE' and obj not in pre_import_objects]
@@ -266,12 +245,10 @@ def fix_armatures_post_import(pre_import_objects):
         bpy.context.scene.armature = armature.name
         fix_bone_orientations(armature)
 
-        # Set better bone view
         if hasattr(armature, 'draw_type'):
             armature.draw_type = 'WIRE'
             armature.show_in_front = True
             
-    # Restore visibility states
     saved_states.load(load_mode=False, load_select=False, load_hide=True)
 
 
@@ -283,13 +260,10 @@ class ZipPopup(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, context):
-        # Save all current objects to check which armatures got added by the importer
         pre_import_objects = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE']
 
-        # Import the file
         ImportAnyModel.extract_file()
 
-        # Create list of armatures that got added during import, select them in cats and fix their bone orientations if necessary
         fix_armatures_post_import(pre_import_objects)
 
         return {'FINISHED'}
@@ -299,7 +273,6 @@ class ZipPopup(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 6))
 
     def check(self, context):
-        # Important for changing options
         return False
 
     def draw(self, context):
@@ -328,9 +301,6 @@ def get_zip_content(self, context):
             file_name = os.path.basename(file_path)
             zip_name = os.path.basename(zip_path)
 
-            # 1. Will be returned by context.scene
-            # 2. Will be shown in lists
-            # 3. will be shown in the hover description (below description)
             choices.append((
                 file_id,
                 encode_str(file_name),
@@ -362,7 +332,6 @@ class ModelsPopup(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 3))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
@@ -403,7 +372,6 @@ class ExporterModelsPopup(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 3))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
@@ -467,12 +435,10 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             bpy.ops.cats_importer.enable_mmd('INVOKE_DEFAULT')
             return {'FINISHED'}
 
-        #try:
         filename, extension = os.path.splitext(self.filepath)
 
         if(extension == ".vmd"):
 
-            #A dictionary to change the current model to MMD importer compatable temporarily
             bonedict = {
                 "Chest":"UpperBody",
                 "Neck":"Neck",
@@ -518,14 +484,12 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
             bpy.ops.mmd_tools_local.import_vmd(filepath=self.filepath,bone_mapper='RENAMED_BONES',use_underscore=True, dictionary='INTERNAL')
 
-            #create animation for original if there isn't one.
             if armature.animation_data == None :
                 armature.animation_data_create()
             if armature.animation_data.action == None:
                 armature.animation_data.action = bpy.data.actions.new("MMD Animation")
 
 
-            #create animation for new if there isn't one.
             if new_armature.animation_data == None :
                 new_armature.animation_data_create()
             if new_armature.animation_data.action == None:
@@ -534,22 +498,18 @@ class ImportMMDAnimation(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             active_obj = new_armature
             ad = armature.animation_data
 
-            #iterate through bones and translate them back, therefore blender API will change the animation to be correct.
             reverse_bonedict = {v: k for k, v in bonedict.items()}
             for bone in new_armature.data.bones:
                 if bone.name in reverse_bonedict:
-                    bone.name = reverse_bonedict[bone.name] #reverse name of bone from value in dictionary back to a key to change the animation.
+                    bone.name = reverse_bonedict[bone.name]
 
-            #assign animation back to original rig.
             armature.animation_data.action = new_armature.animation_data.action
 
-            #make sure our new armature is selected
             Common.unselect_all()
             Common.switch('OBJECT')
             Common.unselect_all()
             Common.set_active(new_armature)
 
-            #delete active object which is armature.
             bpy.ops.object.delete(use_global=True, confirm=False)
             
         return {'FINISHED'}
@@ -600,7 +560,6 @@ class ImportFBX(bpy.types.Operator):
     def execute(self, context):
         Common.remove_unused_objects()
 
-        # Enable fbx if it isn't enabled yet
         fbx_is_enabled = addon_utils.check('io_scene_fbx')[1]
         if not fbx_is_enabled:
             addon_utils.enable('io_scene_fbx')
@@ -648,15 +607,12 @@ class InstallXPS(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 4.5))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
 
-        # row = col.row(align=True)
-        # row.label(text="The plugin 'XPS Tools' is required for this function.")
         col.separator()
         row = col.row(align=True)
         row.label(text=t('InstallX.pleaseInstall1'))
@@ -685,15 +641,12 @@ class InstallSource(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 4.5))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
 
-        # row = col.row(align=True)
-        # row.label(text="The plugin 'Source Tools' is required for this function.")
         col.separator()
         row = col.row(align=True)
         row.label(text=t('InstallX.pleaseInstall1'))
@@ -722,15 +675,12 @@ class InstallVRM(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 4.5))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
 
-        # row = col.row(align=True)
-        # row.label(text="The plugin 'VRM Importer' is required for this function.")
         col.separator()
         row = col.row(align=True)
         row.label(text=t('InstallX.pleaseInstall1'))
@@ -742,8 +692,6 @@ class InstallVRM(bpy.types.Operator):
         col.separator()
         row = col.row(align=True)
         row.operator(VrmToolsButton.bl_idname, icon=globs.ICON_URL)
-
-
 
 
 @register_wrap
@@ -760,7 +708,6 @@ class EnableMMD(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 4))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
@@ -771,7 +718,6 @@ class EnableMMD(bpy.types.Operator):
         row.label(text=t('EnableMMD.required1'))
         row = col.row(align=True)
         row.label(text=t('EnableMMD.required2'))
-
 
 
 @register_wrap
@@ -794,13 +740,11 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         sanitized_model_name = ""
         offical_model_name = ""
 
-        #for file names which must be lower case and no special symbols.
         for i in model_name.lower():
             if i.isalnum() or i == "_":
                 sanitized_model_name += i
             else:
                 sanitized_model_name += "_"
-        #for name that appears in playermodel selection screen.
         for i in model_name:
             if i.isalnum() or i == "_" or i == " ":
                 offical_model_name += i
@@ -811,7 +755,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         print("Playermodel Selection Menu Name"+offical_model_name)
 
 
-        steam_librarypath = self.steam_library_path+"steamapps/common/GarrysMod" #add the rest onto it so that we can get garrysmod only.
+        steam_librarypath = self.steam_library_path+"steamapps/common/GarrysMod"
         addonpath = steam_librarypath+"/garrysmod/addons/"+sanitized_model_name+"_playermodel/"
 
         Common.switch("OBJECT")
@@ -822,7 +766,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         except AttributeError:
             bpy.ops.cats_importer.install_source('INVOKE_DEFAULT')
             return
-        #clean imported stuff
         print("cleaning imported armature")
         objects = [j.name for j in bpy.context.selected_objects]
         barneycollection = bpy.data.collections.get("barney_collection")
@@ -855,7 +798,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         bpy.ops.cats_manual.convert_to_valve()
 
         print("putting armature and objects under reference collection")
-        #putting objects and armature under a better collection.
         refcoll = bpy.data.collections.get(sanitized_model_name+"_ref")
         if not refcoll:
             refcoll = bpy.data.collections.new(sanitized_model_name+"_ref")
@@ -898,24 +840,21 @@ class ExportGmodPlayermodel(bpy.types.Operator):
 
 
         print("zeroing transforms and then scaling to gmod scale, then applying transforms.")
-        #zero armature position, scale to gmod size, and then apply transforms
         armature.rotation_euler[0] = 0
         armature.rotation_euler[1] = 0
         armature.rotation_euler[2] = 0
         armature.location[0] = 0
         armature.location[1] = 0
         armature.location[2] = 0
-        armature.scale[0] = 52.4934383202 #meters to hammer units
-        armature.scale[1] = 52.4934383202 #meters to hammer units
-        armature.scale[2] = 52.4934383202 #meters to hammer units
-        #apply transforms of all objects in ref collection
+        armature.scale[0] = 52.4934383202
+        armature.scale[1] = 52.4934383202
+        armature.scale[2] = 52.4934383202
         Common.unselect_all()
         for obj in refcoll.objects:
             Common.select(obj,True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
         print("joining meshes in ref collection")
-        #clear selection
         Common.unselect_all()
         parentobj = None
         body_armature = None
@@ -931,7 +870,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
 
         for obj in refcoll.objects:
             if obj.type == "MESH" and obj != parentobj:
-                #clear selection
                 Common.unselect_all()
                 Common.select(obj,True)
                 Common.set_active(parentobj)
@@ -956,7 +894,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         body_armature.pose.bones["ValveBiped.Bip01_R_UpperArm"].rotation_euler[0] = -45
         bpy.ops.cats_manual.pose_to_rest()
         Common.switch("OBJECT")
-
 
 
         print("grabbing barney armature")
@@ -987,7 +924,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             return child_bones
 
         print("positioning bones for barney armature at your armature's bones PLEASE HAVE A PELVIS BONE")
-        barney_pose_bone_names = [j.name for j in children_bone_recursive(barney_armature.pose.bones["ValveBiped.Bip01_Pelvis"])] #bones are default in order of parent child.
+        barney_pose_bone_names = [j.name for j in children_bone_recursive(barney_armature.pose.bones["ValveBiped.Bip01_Pelvis"])]
 
         armature_matrixes = dict()
         barney_armature_name = barney_armature.name
@@ -1087,7 +1024,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             armcoll.objects.link(obj)
 
         print("making phys parts")
-        #bone names to make phys parts for. Max of 30 pleasee!!! Gmod cannot handle more than 30 but can do up to and including 30.
         bone_names_for_phys = [
         "ValveBiped.Bip01_L_UpperArm",
         "ValveBiped.Bip01_R_UpperArm",
@@ -1117,9 +1053,7 @@ class ExportGmodPlayermodel(bpy.types.Operator):
 
         for obj in physcoll.objects:
             if obj.type == 'MESH':
-                #deselect all objects and select our obj
                 original_object_phys = obj
-                #delete all bad vertex groups we are not using by merging
                 Common.switch('OBJECT')
                 Common.unselect_all()
                 Common.set_active(obj)
@@ -1144,11 +1078,10 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                         bpy.ops.armature.select_all(action='DESELECT')
                         bone = phys_armature.data.edit_bones.get(group.name)
                         if bone is not None:
-                            #select arm bone
 
                             bones_to_merge_valve.append(bone.name)
                         else:
-                            pass #if the group no longer has a bone who cares. usually....
+                            pass
                 Common.switch('OBJECT')
                 Common.unselect_all()
                 Common.set_active(phys_armature)
@@ -1161,7 +1094,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                     phys_armature.data.edit_bones.active = bone
                     bpy.ops.cats_manual.merge_weights()
 
-                #separating into seperate phys objects to join later.
                 Common.switch('OBJECT')
                 Common.unselect_all()
                 Common.set_active(obj)
@@ -1172,7 +1104,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 bpy.ops.object.vertex_group_clean(group_select_mode='ALL', limit=0.1)
                 for bone in bone_names_for_phys:
                     bpy.ops.mesh.select_all(action='DESELECT')
-                    #select vertices belonging to bone
                     try:
                         for index,group in enumerate(obj.vertex_groups):
                             if group.name == bone:
@@ -1182,7 +1113,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                     except:
                         print("failed to find vertex group "+bone+" On phys obj. Skipping.")
                         continue
-                    #duplicate and make convex hull then separate
                     try:
                         bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1})
                         bpy.ops.mesh.convex_hull()
@@ -1195,11 +1125,9 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         selected_objects_memory = context.selected_objects
         for obj in selected_objects_memory:
             convexobjects[obj.vertex_groups[obj.vertex_groups.active_index].name+""] = obj
-        #clear selection
         Common.unselect_all()
 
         print("joining phys parts and assigning to vertex groups")
-        #clear vertex groups and assign each object to their corosponding vertex group.
         for bonename,obj in convexobjects.items():
             Common.unselect_all()
             Common.set_active(obj)
@@ -1211,15 +1139,13 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             bpy.ops.object.vertex_group_assign()
             Common.switch('OBJECT')
 
-        #clear selection
         Common.unselect_all()
-        #since objects already have their armature modifiers, just join into one
         for bonename,obj in convexobjects.items():
             Common.select(obj,True)
         print("if this doesn't work, then you have bad weights!!")
         Common.set_active(list(convexobjects.values())[0])
-        bpy.ops.object.join() #join all objects separated into one.
-        Common.unselect_all()#unselect all and delete original object
+        bpy.ops.object.join()
+        Common.unselect_all()
         Common.set_active(original_object_phys)
         bpy.ops.object.delete(use_global=False)
 
@@ -1234,24 +1160,19 @@ class ExportGmodPlayermodel(bpy.types.Operator):
         obj = parentobj
 
 
-
         print("step 1 arms: getting entire arm list of bones for each side.")
         arm_bone_names = []
         Common.switch('OBJECT')
         Common.unselect_all()
         Common.set_active(arms_armature,True)
         Common.switch('EDIT')
-        #get armature bone names here since we have armature in edit mode.
-        #this is changed later to exlude arm bones
         arms_armature_bone_names_list = [j.name for j in arms_armature.data.edit_bones]
 
         bpy.ops.armature.select_all(action='DESELECT')
         for side in ["L","R"]:
             upper_arm_name = "ValveBiped.Bip01_"+side+"_UpperArm"
-            #get arm bone for this side
             bone = arms_armature.data.edit_bones.get(upper_arm_name)
             if bone is not None:
-                #select arm bone
                 bone.select = True
                 bone.select_head = True
                 bone.select_tail = True
@@ -1260,28 +1181,24 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 print("Getting upper arm for side "+side+" Has failed! Exiting!")
                 return
 
-            #select arm bone children and add to list of arm bone names
             bpy.ops.armature.select_similar(type='CHILDREN')
             for bone in bpy.context.selected_editable_bones:
                 arm_bone_names.append(bone.name)
 
-        if obj.type == 'MESH': #we know parent obj is a mesh this is just for solidarity.
-            #deselect all objects and select our obj
+        if obj.type == 'MESH':
             Common.switch('OBJECT')
             Common.unselect_all()
             Common.set_active(obj)
             Common.switch('EDIT')
 
-            bpy.ops.mesh.select_all(action='DESELECT') #deselecting entire mesh so we can select the mesh parts belonging to our arm bones
+            bpy.ops.mesh.select_all(action='DESELECT')
 
-            #remove arms from armature bone names list
             for i in arm_bone_names:
                 if i in arms_armature_bone_names_list:
                     arms_armature_bone_names_list.remove(i)
 
 
             for bonename in arms_armature_bone_names_list:
-                #select vertices belonging to bone
                 try:
                     for index,group in enumerate(obj.vertex_groups):
                         if group.name == bonename:
@@ -1293,7 +1210,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                     continue
             bpy.ops.mesh.delete(type='VERT')
             Common.switch('OBJECT')
-        #select all arm bones and invert selection, then delete bones in edit mode.
         print("deleting leftover bones for arms and finding chest location.")
         parentobj = None
         arms_armature = None
@@ -1313,7 +1229,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             bone.select = False
             bone.select_head = False
             bone.select_tail = False
-            #arm_bone_names = ["ValveBiped.Bip01_"+side+"_UpperArm","ValveBiped.Bip01_"+side+"_Forearm","ValveBiped.Bip01_"+side+"_Finger4","ValveBiped.Bip01_"+side+"_Finger41","ValveBiped.Bip01_"+side+"_Finger42","ValveBiped.Bip01_"+side+"_Finger3","ValveBiped.Bip01_"+side+"_Finger31","ValveBiped.Bip01_"+side+"_Finger32","ValveBiped.Bip01_"+side+"_Finger2","ValveBiped.Bip01_"+side+"_Finger21","ValveBiped.Bip01_"+side+"_Finger22","ValveBiped.Bip01_"+side+"_Finger1","ValveBiped.Bip01_"+side+"_Finger11","ValveBiped.Bip01_"+side+"_Finger12","ValveBiped.Bip01_"+side+"_Finger0","ValveBiped.Bip01_"+side+"_Finger01","ValveBiped.Bip01_"+side+"_Finger02"]
             if bone.name in arm_bone_names:
                 bone.select = True
                 bone.select_head = True
@@ -1323,7 +1238,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
                 chestloc = (bone.matrix[0][3],bone.matrix[1][3],bone.matrix[2][3])
             if bone.name == "ValveBiped.Bip01_Spine2":
                 chestloc = (bone.matrix[0][3],bone.matrix[1][3],bone.matrix[2][3])
-        #once we are done selecting bones, invert and delete so we delete non arm bones.
         bpy.ops.armature.select_all(action='INVERT')
         bpy.ops.armature.delete()
         Common.switch('OBJECT')
@@ -1338,7 +1252,6 @@ class ExportGmodPlayermodel(bpy.types.Operator):
             if obj.type == "ARMATURE":
                 arms_armature = obj
         obj = parentobj
-        #move arms armature to origin
         arms_armature.location = [(-1*chestloc[0]),(-1*chestloc[1]),(-1*chestloc[2])]
         Common.select(parentobj,True)
         Common.select(arms_armature,True)
@@ -1543,8 +1456,6 @@ $sequence \"proportions\"{
 }"""
 
 
-
-
         print("writing body script file iteration 1. If this errors, please save your file!")
         target_dir = bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/")
         os.makedirs(target_dir,0o777,True)
@@ -1553,14 +1464,12 @@ $sequence \"proportions\"{
         compilefile.close()
 
         print("configuring export path for body. If this throws an error, save your file!!")
-        bpy.context.scene.vs.export_path = "//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/"#two backslashes to escape the backslash because a backslash escapes.
+        bpy.context.scene.vs.export_path = "//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/"
         bpy.context.scene.vs.qc_path = "//CATS Bake/" + platform_name + "/"+sanitized_model_name+"/"+sanitized_model_name+".qc"
 
         print("exporting body models")
         Common.switch('OBJECT')
 
-        #can't iterate so it had to be copied twice
-        #body model
         parentobj = None
         body_armature = None
         bpy.context.scene.vs.export_list_active = 0
@@ -1580,7 +1489,6 @@ $sequence \"proportions\"{
         body_armature.data.vs.implicit_zero_bone = False
         bpy.ops.export_scene.smd()
 
-        #phys model
         parentobj = None
         body_armature = None
         collection = bpy.data.collections[sanitized_model_name+"_phys"]
@@ -1596,7 +1504,6 @@ $sequence \"proportions\"{
                 bpy.context.scene.vs.export_list_active = index
         body_armature.data.vs.implicit_zero_bone = False
         bpy.ops.export_scene.smd()
-
 
 
         print("making animation for idle body")
@@ -1688,7 +1595,6 @@ $sequence \"proportions\"{
         bpy.context.scene.vs.export_list_active = 1
         body_armature.data.vs.implicit_zero_bone = False
         Common.unselect_all()
-        #print("HELLOOOOOOOOOOOOOOOOOOOOOOOOOOO "+str(body_armature.data.vs.implicit_zero_bone))
         for index,listitem in enumerate(bpy.context.scene.vs.export_list):
             print(listitem.name)
             if listitem.name == "anims\\"+body_armature.animation_data.action.name+".smd":
@@ -1696,7 +1602,6 @@ $sequence \"proportions\"{
         bpy.context.scene.vs.action_selection = "CURRENT"
         body_armature.data.vs.implicit_zero_bone = False
         bpy.ops.export_scene.smd()
-        # Lazy fix for a race condition before studiomdl.exe is called
         time.sleep(10)
         print("Generating bone definitions so your model doesn't collapse on itself. ")
         output = subprocess.run([steam_librarypath+"/bin/studiomdl.exe", "-game", steam_librarypath+"/garrysmod", "-definebones", "-nop4", "-verbose", bpy.path.abspath(bpy.context.scene.vs.qc_path)],stdout=subprocess.PIPE)
@@ -1715,12 +1620,9 @@ $sequence \"proportions\"{
 
         print("Compiling model! (THIS CAN TAKE A LONG TIME AND IS PRONE TO ERRORS!!!!)")
         bpy.ops.smd.compile_qc(filepath=bpy.path.abspath(bpy.context.scene.vs.qc_path))
-        #to prevent errors due to missing data because it changes
         refcoll = bpy.data.collections[sanitized_model_name+"_phys"]
 
         print("Moving compiled model to addon folder.")
-        #path after models must match model path in QC.
-        #thanks to "https://stackoverflow.com/a/41827240" for helping me make sure this would work correctly.
         source_dir = steam_librarypath+"/garrysmod/models/"+sanitized_model_name
         target_dir = addonpath+"models/"+sanitized_model_name
         file_names = os.listdir(source_dir)
@@ -1762,7 +1664,7 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
             loc2 = [editbone2.matrix[0][3],editbone2.matrix[1][3],editbone2.matrix[2][3]]
             Common.switch('OBJECT')
             distance = sqrt(((loc2[0]-loc1[0])*(loc2[0]-loc1[0]))+((loc2[1]-loc1[1])*(loc2[1]-loc1[1]))+((loc2[2]-loc1[2])*(loc2[2]-loc1[2])))
-            arms_scale_factor = 11.692535032476918/distance #random number is distance between upper and lower arm for barney armature
+            arms_scale_factor = 11.692535032476918/distance
 
         except Exception as e:
             print("ARMS SOMEHOW DON'T HAVE ARM BONES. SCALER BROKE. PLEASE SEE USER \"434468177062133772\" ON CATS DISCORD.")
@@ -1772,7 +1674,7 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True, properties=False)
 
         print("configuring export path for arms. If this throws an error, save your file!!")
-        bpy.context.scene.vs.export_path = bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"_arms/")#two backslashes to escape the backslash because a backslash escapes.
+        bpy.context.scene.vs.export_path = bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"_arms/")
         bpy.context.scene.vs.qc_path = bpy.path.abspath("//CATS Bake/" + platform_name + "/"+sanitized_model_name+"_arms/"+sanitized_model_name+"_arms.qc")
 
         print("exporting arm model")
@@ -1833,7 +1735,6 @@ player_manager.AddValidHands( \""""+offical_model_name+"""\", \""""+"models/"+sa
         bpy.context.scene.vs.export_list_active = 0
         bpy.context.scene.vs.export_list_active = 1
         body_armature.data.vs.implicit_zero_bone = False
-        #print("HELLOOOOOOOOOOOOOOOOOOOOOOOOOOO "+str(body_armature.data.vs.implicit_zero_bone))
         Common.unselect_all()
         for index,listitem in enumerate(bpy.context.scene.vs.export_list):
             print(listitem.name)
@@ -1881,9 +1782,6 @@ $Sequence \"idle\" {
         bpy.ops.smd.compile_qc(filepath=bpy.path.abspath(bpy.context.scene.vs.qc_path))
 
         print("Moving compiled arms model to addon folder.")
-        #path after models must match model path in QC.
-        #thanks to "https://stackoverflow.com/a/41827240" for helping me make sure this would work correctly.
-        #this is the same as body because they should both be put in the same folder. This could be called once at the end of the script but eh i don't think it's needed.
         source_dir = steam_librarypath+"/garrysmod/models/"+sanitized_model_name
         target_dir = addonpath+"models/"+sanitized_model_name
         file_names = os.listdir(source_dir)
@@ -1896,56 +1794,6 @@ $Sequence \"idle\" {
 
         print("======================FINISHED GMOD PROCESS======================")
         return {'FINISHED'}
-
-
-# def popup_install_xps(self, context):
-#     layout = self.layout
-#     col = layout.column(align=True)
-#
-#     row = col.row(align=True)
-#     row.label(text="The plugin 'XPS Tools' is required for this function.")
-#     col.separator()
-#     row = col.row(align=True)
-#     row.label(text="If it is not enabled please enable it in your User Preferences.")
-#     row = col.row(align=True)
-#     row.label(text="If it is not installed please click here to download it and then install it manually.")
-#     col.separator()
-#     row = col.row(align=True)
-#     row.operator('importer.download_xps_tools', icon=globs.ICON_URL)
-#
-#
-# def popup_install_source(self, context):
-#     layout = self.layout
-#     col = layout.column(align=True)
-#
-#     row = col.row(align=True)
-#     row.label(text="The plugin 'Blender Source Tools' is required for this function.")
-#     col.separator()
-#     row = col.row(align=True)
-#     row.label(text="If it is not enabled please enable it in your User Preferences.")
-#     row = col.row(align=True)
-#     row.label(text="If it is not installed please click here to download it and then install it manually.")
-#     col.separator()
-#     row = col.row(align=True)
-#     row.operator('importer.download_source_tools', icon=globs.ICON_URL)
-#
-#
-# def popup_install_vrm(self, context):
-#     layout = self.layout
-#     col = layout.column(align=True)
-#
-#     row = col.row(align=True)
-#     row.label(text="The plugin 'VRM Importer' is required for this function.")
-#     col.separator()
-#     row = col.row(align=True)
-#     row.label(text="If it is not enabled please enable it in your User Preferences.")
-#     row = col.row(align=True)
-#     row.label(text="Currently you have to select 'Testing' in the addons settings")
-#     row = col.row(align=True)
-#     row.label(text="If it is not installed please click here to download it and then install it manually.")
-#     col.separator()
-#     row = col.row(align=True)
-#     row.operator('importer.download_vrm', icon=globs.ICON_URL)
 
 
 @register_wrap
@@ -1987,7 +1835,6 @@ class VrmToolsButton(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# Export checks
 _meshes_count = 0
 _tris_count = 0
 _mat_list = []
@@ -2017,11 +1864,9 @@ class ExportModel(bpy.types.Operator):
     def execute(self, context):
         meshes = Common.get_meshes_objects_for_export()
 
-        # Check for warnings
         if not self.action == 'NO_CHECK':
             global _meshes_count, _tris_count, _mat_list, _broken_shapes, _textures_found, _eye_meshes_not_named_body
 
-            # Reset export checks
             _meshes_count = 0
             _tris_count = 0
             _mat_list = []
@@ -2035,22 +1880,17 @@ class ExportModel(bpy.types.Operator):
                     body_extists = True
                     break
 
-            # Check for export warnings
             for mesh in meshes:
-                # Check mesh count
                 _meshes_count += 1
 
-                # Check tris count
                 _tris_count += len(mesh.data.polygons)
 
-                # Check material count
                 for mat_slot in mesh.material_slots:
                     if mat_slot and mat_slot.material and mat_slot.material.users and mat_slot.material.name not in _mat_list:
                         _mat_list.append(mat_slot.material.name)
                         _textures_found = True
                         
                 if Common.has_shapekeys(mesh):
-                    # Check if there are broken shapekeys
                     for shapekey in mesh.data.shape_keys.key_blocks[1:]:
                         vert_count = 0
                         for vert in shapekey.data:
@@ -2060,11 +1900,9 @@ class ExportModel(bpy.types.Operator):
                                     _broken_shapes.append(shapekey.name)
                                     vert_count = 1000
                                     break
-                            # Only check the first 10 vertices of this shapekey
                             if vert_count == 1000:
                                 break
 
-                    # Check if there are meshes with eye tracking, but are not named Body
                     if not body_extists:
                         for shapekey in mesh.data.shape_keys.key_blocks[1:]:
                             if mesh.name not in _eye_meshes_not_named_body:
@@ -2072,7 +1910,6 @@ class ExportModel(bpy.types.Operator):
                                     _eye_meshes_not_named_body.append(mesh.name)
                                     break
 
-            # Check if a warning should be shown
             if _meshes_count > max_meshes_light \
                     or _tris_count > max_tris \
                     or len(_mat_list) > max_mats \
@@ -2082,14 +1919,11 @@ class ExportModel(bpy.types.Operator):
                 bpy.ops.cats_importer.display_error('INVOKE_DEFAULT')
                 return {'FINISHED'}
 
-        # Continue if there are no errors or the check was skipped
 
-        # Check if textures are found and if they should be embedded
         path_mode = 'AUTO'
         if _textures_found and Settings.get_embed_textures():
             path_mode = 'COPY'
 
-        # Open export window
         try:
             if self.filepath:
                 bpy.ops.export_scene.fbx('EXEC_DEFAULT',
@@ -2127,7 +1961,6 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
     filename_ext = ".vmd"
     filter_glob: bpy.props.StringProperty(default="*.vmd", options={'HIDDEN'})
 
-    # Copy the properties from MMD Tools importer that we want to expose
     bone_mapper: bpy.props.EnumProperty(
         name="Bone Mapper",
         description="Select bone mapper",
@@ -2174,13 +2007,10 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             return {'FINISHED'}
 
         try:
-            # Select the armature
             armature = Common.get_armature()
             Common.unselect_all()
             Common.set_active(armature)
             
-            # Call the MMD Tools VMD importer directly with the file we selected
-            # and the parameters we set in the UI
             from mmd_tools_local.core.vmd import importer as vmd_importer
             from mmd_tools_local import auto_scene_setup
             from mmd_tools_local.utils import makePmxBoneMap
@@ -2208,7 +2038,6 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             
             importer.assign(armature)
             
-            # Update scene settings
             auto_scene_setup.setupFrameRanges()
             auto_scene_setup.setupFps()
             
@@ -2223,7 +2052,6 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             return {'CANCELLED'}
 
 
-#donated to cats unofficial by @989onan - comment by @989onan
 @register_wrap
 class Cats_OT_ExportResonite(bpy.types.Operator):
     bl_idname = 'cats_importer.export_resonite'
@@ -2282,7 +2110,6 @@ class ErrorDisplay(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 6.1))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):
@@ -2305,25 +2132,6 @@ class ErrorDisplay(bpy.types.Operator):
             col.separator()
             col.separator()
 
-        # if self.mat_count > 10:
-        #     row = col.row(align=True)
-        #     row.scale_y = 0.75
-        #     row.label(text="Too many materials!", icon='ERROR')
-        #     col.separator()
-        #
-        #     row = col.row(align=True)
-        #     row.scale_y = 0.75
-        #     row.label(text="You have " + str(self.mat_count) + " materials on this model! (max 10)")
-        #     row = col.row(align=True)
-        #     row.scale_y = 0.75
-        #     row.label(text="You should create a texture atlas before you export this model.")
-        #     col.separator()
-        #     row = col.row(align=True)
-        #     row.scale_y = 0.75
-        #     row.label(text="The Auto Atlas in CATS is now better and easier than ever, so please make use of it.")
-        #     col.separator()
-        #     col.separator()
-        #     col.separator()
 
         if self.mat_count > max_mats:
             row = col.row(align=True)

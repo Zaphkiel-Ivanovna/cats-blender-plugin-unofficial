@@ -10,10 +10,6 @@ from .. import globs
 from .translations import t
 
 
-# addon_name = "Shotariya-don"
-# min_version = [1, 1, 6]
-
-
 @register_wrap
 class EnableSMC(bpy.types.Operator):
     bl_idname = 'cats_atlas.enable_smc'
@@ -22,7 +18,6 @@ class EnableSMC(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        # disable all wrong versions
         for mod in addon_utils.modules():
             if mod.bl_info['name'] == "Shotariya-don":
                 if addon_utils.check(mod.__name__)[0]:
@@ -39,7 +34,6 @@ class EnableSMC(bpy.types.Operator):
                         pass
                     continue
 
-        # then enable correct version
         for mod in addon_utils.modules():
             if mod.bl_info['name'] == "Shotariya's Material Combiner":
                 if mod.bl_info['version'] < (2, 1, 2, 9):
@@ -81,7 +75,6 @@ class InstallShotariya(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self, width=int(dpi_value * 5.3))
 
     def check(self, context):
-        # Important for changing options
         return True
 
     def draw(self, context):

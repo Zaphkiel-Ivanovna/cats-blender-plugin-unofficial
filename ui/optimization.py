@@ -29,7 +29,6 @@ _smc_cache_timestamp = 0
 def custom_draw_smc_ui(context, m_col):
     """Custom wrapper for Material Combiner UI that handles interface changes"""
     try:
-        # Try to import the Material Combiner modules
         smc_module = None
         globs_module = None
         main_panel_module = None
@@ -55,7 +54,6 @@ def custom_draw_smc_ui(context, m_col):
             row.operator(Atlas.ShotariyaButton.bl_idname, icon=globs.ICON_URL)
             return
         
-        # Check if Material Combiner uses the old interface
         if not hasattr(main_panel_module.MaterialCombinerPanel, 'draw_pillow_installer'):
             draw_error_box(m_col, [
                 t('OptimizePanel.matCombOutOfDate'),
@@ -67,9 +65,7 @@ def custom_draw_smc_ui(context, m_col):
             row.operator(Atlas.ShotariyaButton.bl_idname, icon=globs.ICON_URL)
             return
             
-        # Check Pillow availability using Material Combiner's globals
         if globs_module.pil_available:
-            # Pillow is available, show the materials list
             if hasattr(context.scene, 'smc_ob_data') and context.scene.smc_ob_data:
                 m_col.template_list(
                     "SMC_UL_Combine_List",
@@ -93,17 +89,14 @@ def custom_draw_smc_ui(context, m_col):
             col.operator("smc.combiner", text="Save Atlas to..", icon='TEXTURE').cats = True
             
         elif globs_module.pil_install_attempted:
-            # Installation complete, restart required
             col = m_col.box().column()
             col.label(text="Installation complete", icon='CHECKMARK')
             col.label(text="Please restart Blender")
             
         else:
-            # Pillow needs to be installed - use Material Combiner's installer
             if hasattr(main_panel_module.MaterialCombinerPanel, 'draw_pillow_installer'):
                 main_panel_module.MaterialCombinerPanel.draw_pillow_installer(context, m_col)
             else:
-                # Fallback for older versions
                 draw_error_box(m_col, t('OptimizePanel.matCombPillowRequired'))
                 m_col.separator()
                 row = m_col.row()
@@ -111,7 +104,6 @@ def custom_draw_smc_ui(context, m_col):
                 row.operator('smc.get_pillow', text='Install Pillow', icon='IMPORT')
             
     except Exception as e:
-        # If there's any error, show a helpful message
         draw_error_box(m_col, [
             t('OptimizePanel.matCombInterfaceError'),
             t('OptimizePanel.matCombUseMainPanel')
@@ -125,7 +117,6 @@ def check_for_smc(force_refresh=False):
     import time
     current_time = time.time()
     
-    # Use cache if available and not expired (5 minutes)
     if not force_refresh and _smc_check_cache is not None and (current_time - _smc_cache_timestamp) < 300:
         return
     
@@ -152,12 +143,10 @@ def check_for_smc(force_refresh=False):
                 draw_smc_ui = getattr(import_module(mod.__name__ + '.operators.ui.include'), 'draw_ui')
                 break
         
-        # Cache the result
         _smc_check_cache = True
         _smc_cache_timestamp = current_time
         
     except Exception as e:
-        # Handle any errors during addon check
         print(f"Error checking for Material Combiner: {e}")
         draw_smc_ui = None
 
@@ -168,7 +157,6 @@ class OptimizePanel(ToolPanel, bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        # Parent panel is now just a container for sub-panels
         pass
 
 
@@ -186,19 +174,16 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_atlas_section(self, col, context):
         try:
-            # PBR Info
             draw_info_box(col, "For PBR/Normal maps, use Tuxedo Blender Plugin.")
 
             col.separator()
 
-            # Atlas description
             desc_col = col.column(align=True)
             desc_col.scale_y = 0.75
             desc_col.label(text=t('OptimizePanel.atlasDesc'))
 
             col.separator()
 
-            # Author credit
             box = col.box()
             row = box.row(align=True)
             row.scale_y = 0.75
@@ -209,7 +194,6 @@ class AtlasSubPanel(ToolPanel, bpy.types.Panel):
 
             col.separator()
 
-            # SMC Status section
             if smc_is_disabled:
                 self.draw_smc_message(col, 'disabled')
             elif old_smc_version:
@@ -295,7 +279,6 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_material_section(self, col, context):
         try:
-            # Material operations
             box = col.box()
             box_col = box.column(align=True)
             box_col.scale_y = 1.3
@@ -304,7 +287,6 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
             
             col.separator()
             
-            # Mesh operations
             box = col.box()
             box_col = box.column(align=True)
             
@@ -319,7 +301,6 @@ class MaterialSubPanel(ToolPanel, bpy.types.Panel):
             
             col.separator()
             
-            # Cleanup
             box = col.box()
             box_col = box.column(align=True)
 
@@ -350,7 +331,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
 
     def draw_bone_merging_section(self, col, context):
         try:
-            # Settings box
             box = col.box()
             box_col = box.column(align=True)
             
@@ -362,7 +342,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
             box_col.prop(context.scene, 'merge_bone')
             box_col.prop(context.scene, 'merge_ratio')
             
-            # Actions row
             actions_row = box_col.row(align=True)
             actions_row.scale_y = 1.3
             actions_row.operator(Rootbone.RefreshRootButton.bl_idname, icon='FILE_REFRESH')
@@ -370,7 +349,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
             
             col.separator()
             
-            # Weights box
             box = col.box()
             box_col = box.column(align=True)
             
@@ -383,7 +361,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
             ops_row.operator(Armature_manual.MergeWeights.bl_idname, text=t('OtherOptionsPanel.MergeWeights.label'))
             ops_row.operator(Armature_manual.MergeWeightsToActive.bl_idname, text=t('OtherOptionsPanel.MergeWeightsToActive.label'))
             
-            # Options
             options_col = box_col.column(align=True)
             options_col.scale_y = 0.85
             options_col.separator()
@@ -392,7 +369,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
             
             col.separator()
             
-            # Delete operations box
             box = col.box()
             box_col = box.column(align=True)
             
@@ -416,7 +392,6 @@ class BoneMergingSubPanel(ToolPanel, bpy.types.Panel):
 
             col.separator()
 
-            # Extra operations box
             box = col.box()
             box_col = box.column(align=True)
             box_col.scale_y = 1.3

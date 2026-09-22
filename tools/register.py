@@ -33,22 +33,16 @@ def get_ordered_classes():
 def order_classes():
     global __bl_ordered_classes
     classes_to_register = set(__bl_classes)
-    # Keep __bl_classes' order so the result is stable between runs
     deps_dict = {cls: set(iter_own_register_deps(cls, classes_to_register)) for cls in __bl_classes}
 
-    # Put all the UI into the list first
     __bl_ordered_classes = [cls for cls in __bl_classes if is_ui_class(cls)]
 
-    # Then put everything else sorted into the list
     for cls in toposort(deps_dict):
         if not is_ui_class(cls):
             __bl_ordered_classes.append(cls)
 
 
 def is_ui_class(cls):
-    # Under the extension system a module is named
-    # bl_ext.<repo>.cats_blender_plugin.ui.main, so match on the package instead
-    # of a 'ui.' prefix that only held for a plain add-on install.
     module = cls.__module__
     return '.ui.' in module or module.endswith('.ui')
 
@@ -65,16 +59,11 @@ def iter_register_deps(cls):
 
 
 def get_dependency_from_annotation(value):
-    # bpy.props.* returns a _PropertyDeferred, not the (function, keywords) tuple
-    # it returned before Blender 2.93.
     if isinstance(value, bpy.props._PropertyDeferred):
         if value.function in (bpy.props.PointerProperty, bpy.props.CollectionProperty):
             return value.keywords.get("type")
     return None
 
-
-# Find order to register to solve dependencies
-#################################################
 
 def toposort(deps_dict):
     sorted_list = []
@@ -88,8 +77,6 @@ def toposort(deps_dict):
             else:
                 unsorted.append(value)
         if len(unsorted) == len(deps_dict):
-            # Nothing was resolved this pass, so the rest depend on each other.
-            # Append them as-is instead of looping forever.
             print('CATS: dependency cycle between', [cls.__name__ for cls in unsorted])
             sorted_list.extend(unsorted)
             break

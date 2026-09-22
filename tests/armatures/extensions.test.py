@@ -68,9 +68,6 @@ class TestAddon(unittest.TestCase):
         bpy.context.scene.combine_mats = False
         bpy.context.scene.keep_upper_chest = False
 
-        #result = bpy.ops.cats_atlas.generate_atlas()
-        # self.assertTrue(result == {'CANCELLED'})
-        # self.assertTrue(result == {'FINISHED'})  # Does not work because it requires an external plugin which is not installed
         self.assertTrue(True)
 
 

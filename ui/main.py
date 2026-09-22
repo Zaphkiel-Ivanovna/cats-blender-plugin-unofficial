@@ -14,7 +14,7 @@ class SearchMenuOperatorBase(object):
     """Base class for search menu operators that set scene properties."""
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     bl_property = "my_enum"
-    scene_property = None  # Override in subclass
+    scene_property = None
     
     def execute(self, context):
         if self.scene_property:
@@ -52,7 +52,6 @@ def draw_warning_box(layout, messages, icon='INFO'):
     for i, msg in enumerate(messages):
         row = col.row(align=True)
         if i == 0:
-            # First line gets alert styling and icon for errors/warnings
             if icon in ('ERROR', 'WARNING'):
                 row.alert = True
             row.label(text=msg, icon=icon if i == 0 else 'BLANK1')
@@ -72,7 +71,6 @@ def draw_info_box(layout, messages):
     return draw_warning_box(layout, messages, icon='INFO')
 
 
-# Export commonly used classes and functions for easy import
 __all__ = [
     'ToolPanel',
     'SearchMenuOperatorBase',

@@ -65,7 +65,6 @@ class CombineMaterialsButton(bpy.types.Operator):
         self.combined_tex = {}
         material_data = {}
         
-        # Fast material hashing
         for ob in Common.get_meshes_objects():
             for index, mat_slot in enumerate(ob.material_slots):
                 hash_val = self.hash_material(mat_slot.material)
@@ -73,7 +72,6 @@ class CombineMaterialsButton(bpy.types.Operator):
                     material_data[hash_val] = []
                 material_data[hash_val].append({'mat': mat_slot.name, 'index': index})
         
-        # Filter single materials
         self.combined_tex = {k: v for k, v in material_data.items() if len(v) > 1}
 
     def batch_assign_materials(self, mesh, material_groups):
@@ -89,7 +87,6 @@ class CombineMaterialsButton(bpy.types.Operator):
         print('COMBINE MATERIALS!')
         saved_data = Common.SavedData()
         
-        # Setup
         Common.set_default_stage()
         Common.remove_rigidbodies_global()
         self.generate_combined_tex()
@@ -104,13 +101,11 @@ class CombineMaterialsButton(bpy.types.Operator):
             Common.unselect_all()
             Common.set_active(mesh)
 
-            # Process material groups
             material_groups = list(self.combined_tex.values())
             if material_groups:
                 self.batch_assign_materials(mesh, material_groups)
                 total_combined += sum(len(group) for group in material_groups)
 
-            # Cleanup
             Common.switch('OBJECT')
             bpy.ops.object.material_slot_remove_unused()
             Common.clean_material_names(mesh)
@@ -121,7 +116,6 @@ class CombineMaterialsButton(bpy.types.Operator):
         Common.update_material_list()
         saved_data.load()
 
-        # Report results
         if total_combined == 0:
             self.report({'INFO'}, t('CombineMaterialsButton.error.noChanges'))
         else:

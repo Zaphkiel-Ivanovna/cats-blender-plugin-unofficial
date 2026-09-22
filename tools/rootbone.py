@@ -27,24 +27,19 @@ class RootButton(bpy.types.Operator):
 
         Common.switch('EDIT')
 
-        # this is the bones that will be parented
         child_bones = globs.root_bones[context.scene.root_bone]
 
-        # Create the new root bone
         new_bone_name = 'Root_' + child_bones[0]
         root_bone = bpy.context.object.data.edit_bones.new(new_bone_name)
         root_bone.parent = bpy.context.object.data.edit_bones[child_bones[0]].parent
 
-        # Parent all children to the new root bone
         for child_bone in child_bones:
             bpy.context.object.data.edit_bones[child_bone].use_connect = False
             bpy.context.object.data.edit_bones[child_bone].parent = root_bone
 
-        # Set position of new bone to parent
         root_bone.head = root_bone.parent.head
         root_bone.tail = root_bone.parent.tail
 
-        # reset the root bone cache
         globs.root_bones_choices = {}
 
         saved_data.load()
@@ -64,7 +59,6 @@ def get_parent_root_bones(self, context):
         return choices
     armature = armature.data
 
-    # Get cache if exists
     if len(globs.root_bones_choices) >= 1:
         return globs.root_bones_choices
 
@@ -97,8 +91,6 @@ def get_parent_root_bones(self, context):
         'root_'
     ]
 
-    # Find and group bones together that look alike
-    # Please do not ask how this works
     for rootbone in armature.bones:
         ignore = False
         for ignore_bone_name in ignore_bone_names_with:
@@ -125,12 +117,10 @@ def get_parent_root_bones(self, context):
 
     bone_groups_tmp = {}
     for rootbone in bone_groups:
-        # NOTE: user probably doesn't want to parent bones together that have less then 2 bones
         if len(bone_groups[rootbone]) >= 2:
             choices.append((rootbone, rootbone.replace('_R', '').replace('_L', '') + ' (' + str(len(bone_groups[rootbone])) + ' bones)', rootbone))
             bone_groups_tmp[rootbone] = bone_groups[rootbone]
 
-    # set cache
     globs.root_bones = bone_groups_tmp
     globs.root_bones_choices = choices
 

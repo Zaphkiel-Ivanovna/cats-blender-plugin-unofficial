@@ -7,10 +7,8 @@ from bpy.utils.previews import ImagePreviewCollection
 
 from .. import globs
 
-# global variables
 preview_collections: dict[str, ImagePreviewCollection] = {}
 
-# Icon name -> file name inside resources/icons/other
 OTHER_ICONS = {
     'heart1': 'heart1.png',
     'discord1': 'discord1.png',
@@ -24,12 +22,8 @@ OTHER_ICONS = {
 
 
 def load_other_icons():
-    # previews.new() hands out a fresh collection every time and Blender keeps it
-    # until it is removed, so drop whatever a previous load left behind first.
     unload_icons()
 
-    # Note that preview collections returned by bpy.utils.previews
-    # are regular py objects - you can use them to store custom data.
     pcoll = bpy.utils.previews.new()
 
     icons_other_dir = globs.resource_path("icons", "other")

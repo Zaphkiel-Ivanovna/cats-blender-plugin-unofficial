@@ -19,7 +19,6 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
         layout = self.layout
         box = layout.box()
 
-        # Settings section
         settings_box = box.box()
         settings_col = settings_box.column(align=True)
         
@@ -29,7 +28,6 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
         
         settings_col.separator()
 
-        # General settings
         row = settings_col.row(align=True)
         row.prop(context.scene, 'embed_textures')
         
@@ -44,13 +42,11 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
 
         settings_col.separator()
 
-        # Language settings
         lang_row = settings_col.row(align=True)
         lang_split = layout_split(lang_row, factor=0.56)
         lang_split.label(text=t('Scene.ui_lang.label') + ':')
         lang_split.prop(context.scene, 'ui_lang', text='')
 
-        # Dev branch options
         if globs.dev_branch:
             settings_col.separator()
             row = settings_col.row(align=True)
@@ -58,7 +54,6 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
 
         settings_col.separator()
 
-        # Debug options
         debug_box = box.box()
         debug_col = debug_box.column(align=True)
         
@@ -71,7 +66,6 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
             row.scale_y = 0.75
             row.operator(Settings.DebugTranslations.bl_idname, icon='X')
 
-        # Settings changed warning
         if Settings.settings_changed():
             warning_box = box.box()
             warning_col = warning_box.column(align=True)
@@ -87,7 +81,6 @@ class UpdaterPanel(ToolPanel, bpy.types.Panel):
             row = warning_col.row(align=True)
             row.operator(Settings.RevertChangesButton.bl_idname, icon='RECOVER_LAST')
 
-        # Updater section
         updater_box = box.box()
         updater.draw_updater_panel(context, updater_box)
 

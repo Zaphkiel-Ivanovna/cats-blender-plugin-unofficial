@@ -17,7 +17,6 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
         layout = self.layout
         col = layout.column(align=True)
 
-        # Mesh selection section
         mesh_count = len(Common.get_meshes_objects(check=False))
         if mesh_count == 0:
             draw_error_box(col, t('VisemePanel.error.noMesh'))
@@ -28,11 +27,9 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
             row.prop(context.scene, 'mesh_name_viseme', icon='MESH_DATA')
             col.separator()
 
-        # Viseme settings section
         box = col.box()
         box_col = box.column(align=True)
 
-        # Preview section
         row = box_col.row(align=True)
         row.scale_y = 1.3
         if context.scene.viseme_preview_mode:
@@ -44,7 +41,6 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
         
         box_col.separator()
 
-        # Get the mesh for shape key selection
         mesh_name = context.scene.mesh_name_viseme
         if not mesh_name or mesh_name == 'Cats_empty_enum_identifier':
             box_col.label(text=t('VisemePanel.error.noMesh'), icon='ERROR')
@@ -54,19 +50,16 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
                 if not mesh or not mesh.data.shape_keys:
                     box_col.label(text=t('VisemePanel.error.noShapekeys'), icon='ERROR')
                 else:
-                    # Mouth A
                     row = box_col.row(align=True)
                     row.scale_y = 1.0
                     row.label(text=t('Scene.mouth_a.label')+":")
                     row.prop_search(context.scene, "mouth_a", mesh.data.shape_keys, "key_blocks", text="")
 
-                    # Mouth O
                     row = box_col.row(align=True)
                     row.scale_y = 1.0
                     row.label(text=t('Scene.mouth_o.label')+":")
                     row.prop_search(context.scene, "mouth_o", mesh.data.shape_keys, "key_blocks", text="")
 
-                    # Mouth CH
                     row = box_col.row(align=True)
                     row.scale_y = 1.0
                     row.label(text=t('Scene.mouth_ch.label')+":")
@@ -76,14 +69,12 @@ class VisemePanel(ToolPanel, bpy.types.Panel):
 
         box_col.separator()
 
-        # Shape intensity
         row = box_col.row(align=True)
         row.scale_y = 1.0
         row.prop(context.scene, 'shape_intensity')
 
         box_col.separator()
 
-        # Auto viseme button
         row = box_col.row(align=True)
         row.scale_y = 1.3
         row.operator(Viseme.AutoVisemeButton.bl_idname, icon='TRIA_RIGHT')

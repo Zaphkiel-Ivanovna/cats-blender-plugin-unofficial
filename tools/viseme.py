@@ -41,18 +41,15 @@ class VisemePreview:
     
     @classmethod
     def start_preview(cls, context, mesh, shapes):
-        # Validate mesh and shape keys
         if not mesh or not mesh.data or not mesh.data.shape_keys:
             return False
             
         cls._active = True
         cls._preview_data = {}
         
-        # Store original values
         for shape_key in mesh.data.shape_keys.key_blocks:
             cls._preview_data[shape_key.name] = shape_key.value
             
-        # Generate preview shapes dictionary
         shape_a = context.scene.mouth_a
         shape_o = context.scene.mouth_o
         shape_ch = context.scene.mouth_ch
@@ -91,11 +88,9 @@ class VisemePreview:
         if not cls._active:
             return
             
-        # Reset all shape keys
         for shape_key in mesh.data.shape_keys.key_blocks:
             shape_key.value = 0
             
-        # Apply preview shape
         for shape_name, value in mix_data:
             if shape_name in mesh.data.shape_keys.key_blocks:
                 mesh.data.shape_keys.key_blocks[shape_name].value = value * context.scene.shape_intensity
@@ -107,7 +102,6 @@ class VisemePreview:
         if not cls._active:
             return
             
-        # Restore original values
         for shape_name, value in cls._preview_data.items():
             if shape_name in mesh.data.shape_keys.key_blocks:
                 mesh.data.shape_keys.key_blocks[shape_name].value = value
@@ -192,10 +186,8 @@ class AutoVisemeButton(bpy.types.Operator):
         mesh = Common.get_objects()[context.scene.mesh_name_viseme]
         Common.set_active(mesh)
 
-        # Fix a small bug
         bpy.context.object.show_only_shape_key = False
 
-        # Rename selected shapes and rename them back at the end
         shapes = [context.scene.mouth_a, context.scene.mouth_o, context.scene.mouth_ch]
         renamed_shapes = [context.scene.mouth_a, context.scene.mouth_o, context.scene.mouth_ch]
         mesh = Common.get_objects()[context.scene.mesh_name_viseme]
@@ -223,7 +215,6 @@ class AutoVisemeButton(bpy.types.Operator):
         shape_o = context.scene.mouth_o
         shape_ch = context.scene.mouth_ch
 
-        # Set up the shape keys
         shapekey_data = OrderedDict()
         shapekey_data['vrc.v_aa'] = {
             'mix': [
@@ -340,7 +331,6 @@ class AutoVisemeButton(bpy.types.Operator):
                     if shape_name in mesh.data.shape_keys.key_blocks:
                         mesh.data.shape_keys.key_blocks[shape_name].value = value
 
-        # Rename shapes back
         if shapes[0] not in mesh.data.shape_keys.key_blocks:
             shapekey = mesh.data.shape_keys.key_blocks.get(renamed_shapes[0])
             if shapekey:
@@ -365,7 +355,6 @@ class AutoVisemeButton(bpy.types.Operator):
                 shapekey.name = shapes[2]
                 renamed_shapes[2] = shapes[2]
 
-        # Reset context scenes
         try:
             context.scene.mouth_a = renamed_shapes[0]
         except TypeError:
@@ -381,17 +370,13 @@ class AutoVisemeButton(bpy.types.Operator):
         except TypeError:
             pass
 
-        # Set shapekey index back to 0
         bpy.context.object.active_shape_key_index = 0
 
-        # Remove empty objects
         Common.switch('EDIT')
         Common.remove_empty()
 
-        # Fix armature name
         Common.fix_armature_names()
 
-        # Sort visemes
         Common.sort_shape_keys(mesh.name)
 
         saved_data.load()
@@ -405,17 +390,14 @@ class AutoVisemeButton(bpy.types.Operator):
     def mix_shapekey(self, context, shapes, shapekey_data, rename_to, intensity):
         mesh = Common.get_objects()[context.scene.mesh_name_viseme]
 
-        # Remove existing shapekey
         for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
             if shapekey.name == rename_to:
                 bpy.context.active_object.active_shape_key_index = index
                 bpy.ops.object.shape_key_remove()
                 break
 
-        # Reset all shape keys
         bpy.ops.object.shape_key_clear()
 
-        # Set the shape key values
         for shapekey_data_context in shapekey_data:
             selector = shapekey_data_context[0]
             shapekey_value = shapekey_data_context[1]
@@ -425,17 +407,14 @@ class AutoVisemeButton(bpy.types.Operator):
                     shapekey.slider_max = 10
                     shapekey.value = shapekey_value * intensity
 
-        # Create the new shape key
         mesh.shape_key_add(name=rename_to, from_mix=True)
 
-        # Reset all shape keys and sliders
         bpy.ops.object.shape_key_clear()
         for index, shapekey in enumerate(mesh.data.shape_keys.key_blocks):
             if shapekey.name in shapes:
                 shapekey.slider_max = 1
         mesh.active_shape_key_index = 0
 
-        # Reset context scenes
         context.scene.mouth_a = shapes[0]
         context.scene.mouth_o = shapes[1]
         context.scene.mouth_ch = shapes[2]

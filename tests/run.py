@@ -1,13 +1,5 @@
 # GPL License
 
-# encoding: utf-16
-
-# To run these tests, run this file as a script, e.g.:
-# python run.py --blend=<path to blender executable>
-# The blender executable needs to have Cats installed such that Cats' main module is called "cats" without quotes
-# Remember to run the tests against at least both blender 2.79 and the newest blender version supported by Cats
-# The python version you use to run the script is irrelevant to the tests since blender will use its python version when
-# running the tests
 import urllib.request
 import shutil
 import time
@@ -21,7 +13,6 @@ from termcolor import colored
 from collections import namedtuple
 
 
-# Test whether a path exists.  Returns False for broken symbolic links
 def exists(path):
     try:
         os.stat(path)
@@ -32,7 +23,6 @@ def exists(path):
 
 DownloadData = namedtuple('DownloadData', ['directory', 'file_prefix', 'files'])
 
-# Add any test models you want here!
 download_data = [
     DownloadData(
         directory='armatures',
@@ -51,7 +41,6 @@ download_data = [
     ),
 ]
 
-# Download them
 for data in download_data:
     directory = str(data.directory)
     file_prefix = str(data.file_prefix)
@@ -74,7 +63,6 @@ parser.add_option('-f', '--bfile', dest='globber_blend_files', help='sets the bl
 parser.add_option('-c', action="store_true", dest='ci', help='is travis running this test?', default=False)
 parser.add_option('-v', action="store_true", dest='verbosity', help='verbosity unit tests', default=False)
 parser.add_option('-e', action="store_true", dest='error_continue', help='continue running additional tests even if a test fails', default=False)
-# Useful for debugging
 parser.add_option('-p', action="store_true", dest='pipe_to_std', help='pipe all blender and test output directly to stdout and stderr instead of using custom filtering and output', default=False)
 
 (options, args) = parser.parse_args()
@@ -132,14 +120,11 @@ def print_output(raw, output):
         print(raw)
 
 
-# iterate over each globber_blend_files.blend file relative to the 'tests' directory
-# then iterate over each globber_test.test.py file relative to the 'tests' directory
-# then open up blender with the current blend file and run the current test
 for blend_file in glob.glob(globber_blend_files + '.blend'):
     for file in glob.glob(globber_test + '.test.py'):
         if os.path.basename(file) in scripts_only_executed_once:
             if os.path.basename(file) in scripts_executed:
-                continue  # skips already executed test
+                continue
 
         scripts_executed.append(os.path.basename(file))
         scripts += 1
@@ -172,7 +157,6 @@ for blend_file in glob.glob(globber_blend_files + '.blend'):
             std_output = str(stdout, 'utf-8')
             print(' > UNIT ' + os.path.basename(file).ljust(22) + ' > BLEND ' + os.path.basename(blend_file).ljust(40) + ' > ' + show_time(time.time() - start_time_unit) + 's')
 
-            # This will detect invalid syntax in the unit test itself
             if 'SyntaxError' in error_output or 'IndentationError' in error_output or 'NameError' in error_output or 'ModuleNotFoundError' in error_output:
                 print('ERROR: SyntaxError found in ' + os.path.basename(file))
                 print('------------------------------------------------------------------')
@@ -183,7 +167,6 @@ for blend_file in glob.glob(globber_blend_files + '.blend'):
                 if not error_continue:
                     exit_test()
 
-            # If a unit test went wrong, we want to see the output of the test
             if p.returncode != 0:
                 print(os.path.basename(file).replace('.blend', '.py') + ' (' + os.path.basename(blend_file) + ') - exit code: ' + str(p.returncode))
                 print('------------------------------------------------------------------')

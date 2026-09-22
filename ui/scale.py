@@ -24,14 +24,12 @@ def check_for_imscale(force_refresh=False):
     import time
     current_time = time.time()
     
-    # Use cache if available and not expired (5 minutes)
     if not force_refresh and _imscale_check_cache is not None and (current_time - _imscale_cache_timestamp) < 300:
         return
     
     try:
         draw_imscale_ui = None
 
-        # Check if using immersive scaler shipped with cats
         if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
             import imscale.immersive_scaler as imscale
             draw_imscale_ui = imscale.ui.draw_ui
@@ -39,7 +37,6 @@ def check_for_imscale(force_refresh=False):
             _imscale_cache_timestamp = current_time
             return
 
-        # Check if it's present in blender anyway (installed separately)
         for mod in addon_utils.modules():
             if mod.bl_info['name'] == "Immersive Scaler":
                 if mod.bl_info['version'] < (0, 5, 2):
@@ -54,12 +51,10 @@ def check_for_imscale(force_refresh=False):
                 draw_imscale_ui = getattr(import_module(mod.__name__ + '.ui'), 'draw_ui')
                 break
             
-        # Cache the result
         _imscale_check_cache = True
         _imscale_cache_timestamp = current_time
         
     except Exception as e:
-        # Handle any errors during addon check
         print(f"Error checking for Immersive Scaler: {e}")
         draw_imscale_ui = None
 
@@ -75,13 +70,11 @@ class ScalingPanel(ToolPanel, bpy.types.Panel):
             box = layout.box()
             col = box.column(align=True)
 
-            # Help button section
             col.scale_y = 1.3
             col.operator(Scaler.ImmersiveScalerHelpButton.bl_idname, icon='QUESTION')
 
             col.separator()
 
-            # Status section
             if imscale_is_disabled:
                 self.draw_disabled_message(col)
             elif old_imscale_version:
