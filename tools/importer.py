@@ -20,13 +20,13 @@ from . import settings as Settings
 from ..tools import iconloader as Iconloader
 from .register import register_wrap
 from .translations import t
-from mmd_tools_local.translations import DictionaryEnum
+from ..extern_tools.mmd_tools_local.translations import DictionaryEnum
 import contextlib
 from importlib.util import find_spec
 
 current_blender_version = str(bpy.app.version[:2])[1:-1].replace(', ', '.')
 
-mmd_tools_local_installed = find_spec("mmd_tools_local") is not None
+mmd_tools_local_installed = find_spec("..extern_tools.mmd_tools_local", __package__) is not None
 
 formats = '*.pmx;*.pmd;*.xps;*.mesh;*.ascii;*.smd;*.qc;*.qci;*.vta;*.dmx;*.fbx;*.dae;*.vrm;*.zip'
 format_list = formats.replace('*.', '').split(';')
@@ -1957,10 +1957,10 @@ class ImportMMDAnimationNew(bpy.types.Operator, bpy_extras.io_utils.ImportHelper
             Common.unselect_all()
             Common.set_active(armature)
 
-            from mmd_tools_local.core.vmd import importer as vmd_importer
-            from mmd_tools_local import auto_scene_setup
-            from mmd_tools_local.utils import makePmxBoneMap
-            from mmd_tools_local.translations import DictionaryEnum
+            from ..extern_tools.mmd_tools_local.core.vmd import importer as vmd_importer
+            from ..extern_tools.mmd_tools_local import auto_scene_setup
+            from ..extern_tools.mmd_tools_local.utils import makePmxBoneMap
+            from ..extern_tools.mmd_tools_local.translations import DictionaryEnum
 
             bone_mapper = None
             if self.bone_mapper == "PMX":

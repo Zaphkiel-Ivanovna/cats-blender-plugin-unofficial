@@ -19,7 +19,7 @@ from .. import globs
 from ..extern_tools.google_trans_new.google_trans_new import google_translator
 from .translations import t
 
-from mmd_tools_local import translations as mmd_translations
+from ..extern_tools.mmd_tools_local import translations as mmd_translations
 
 dictionary = {}
 dictionary_google = {}

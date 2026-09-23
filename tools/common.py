@@ -24,7 +24,7 @@ from .register import register_wrap
 from .translations import t
 from sys import intern
 
-from mmd_tools_local import utils
+from ..extern_tools.mmd_tools_local import utils
 import contextlib
 
 def get_objects():

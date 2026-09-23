@@ -38,7 +38,7 @@ PACKAGE_PATH = os.path.dirname(__file__)
 PACKAGE_NAME = __package__
 
 
-from mmd_tools_local import auto_load
+from . import auto_load
 
 auto_load.init(PACKAGE_NAME)
 

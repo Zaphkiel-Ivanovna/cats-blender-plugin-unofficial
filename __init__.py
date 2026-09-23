@@ -3,12 +3,7 @@
 CATS_VERSION = "1.0.1"
 dev_branch = False
 
-import os
 import sys
-
-file_dir = os.path.join(os.path.dirname(__file__), 'extern_tools')
-if file_dir not in sys.path:
-    sys.path.append(file_dir)
 
 import requests
 
@@ -23,7 +18,7 @@ else:
     is_reloading = True
 
 if not is_reloading:
-    import mmd_tools_local
+    from .extern_tools import mmd_tools_local
     if find_spec("imscale") and find_spec("imscale.immersive_scaler"):
         import imscale.immersive_scaler as imscale
     from . import updater
@@ -169,9 +164,6 @@ def unregister():
         bpy.types.MESH_MT_shape_key_context_menu.remove(tools.shapekey.addToShapekeyMenu)
     except (AttributeError, ValueError):
         print('shapekey button was not registered')
-
-    if file_dir in sys.path:
-        sys.path.remove(file_dir)
 
     tools.settings.stop_apply_settings_timer()
 
