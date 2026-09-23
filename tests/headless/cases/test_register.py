@@ -11,7 +11,7 @@ from _harness import check, done, enable, PACKAGE
 cats = enable()
 check("register succeeded", PACKAGE in bpy.context.preferences.addons, True)
 
-props = list(getattr(cats.extentions, "_registered_properties", []))
+props = list(getattr(cats.properties, "_registered_properties", []))
 classes = list(cats.tools.register.get_ordered_classes())
 check("Scene properties were recorded", len(props) > 50, True)
 check("classes were ordered", len(classes) > 50, True)

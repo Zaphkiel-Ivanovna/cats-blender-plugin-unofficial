@@ -24,7 +24,7 @@ if not is_reloading:
     from . import updater
     from . import tools
     from . import ui
-    from . import extentions
+    from . import properties
 else:
     import importlib
     importlib.reload(updater)
@@ -33,7 +33,7 @@ else:
         importlib.reload(imscale)
     importlib.reload(tools)
     importlib.reload(ui)
-    importlib.reload(extentions)
+    importlib.reload(properties)
 
 from .tools.translations import t
 import contextlib
@@ -108,7 +108,7 @@ def register():
     if count < len(ordered_classes):
         print('Skipped', len(ordered_classes) - count, 'CATS classes.')
 
-    extentions.register()
+    properties.register()
 
     tools.iconloader.load_other_icons()
 
@@ -156,7 +156,7 @@ def unregister():
             pass
     print('Unregistered', count, 'CATS classes.')
 
-    extentions.unregister()
+    properties.unregister()
 
     tools.iconloader.unload_icons()
 
